@@ -101,7 +101,7 @@ void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn) {
             } else {
                 for (Elf64_Xword j = 0; (value >>= 1) != 0; ++j) {
                     if (value & 1) {
-                        target[i] += aslr_base;
+                        target[j] += aslr_base;
                     }
                 }
                 target += sizeof(void*) * 8 - 1;
