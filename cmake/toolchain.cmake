@@ -1,0 +1,36 @@
+if (DEFINED ENV{RTLD_CLANG})
+    set(RTLD_CLANG $ENV{RTLD_CLANG}/bin/clang)
+    set(RTLD_CLANGXX $ENV{RTLD_CLANG}/bin/clang++)
+else()
+    set(RTLD_CLANG clang)
+    set(RTLD_CLANGXX clang++)
+endif()
+
+set(NX64_TRIPLE aarch64-linux-elf)
+
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_VERSION 1)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+
+set(ARCH_FLAGS -stdlib=libc++)
+
+set(CMAKE_SYSROOT ${PROJECT_SOURCE_DIR}/toolchain/musl/)
+set(CMAKE_C_COMPILER ${RTLD_CLANG})
+set(CMAKE_C_FLAGS ${ARCH_FLAGS})
+set(CMAKE_C_COMPILER_TARGET ${NX64_TRIPLE})
+set(CMAKE_CXX_COMPILER ${RTLD_CLANGXX})
+set(CMAKE_CXX_COMPILER_TARGET ${NX64_TRIPLE})
+set(CMAKE_CXX_FLAGS ${ARCH_FLAGS})
+set(CMAKE_ASM_COMPILER ${RTLD_CLANG})
+set(CMAKE_ASM_COMPILER_TARGET ${NX64_TRIPLE})
+
+add_compile_options(-mcpu=cortex-a57+fp+simd+crypto+crc)
+add_compile_options(-mno-implicit-float)
+add_compile_options(-fPIC)
+add_compile_options(-fno-stack-protector)
+
+add_link_options(-nostdlib)
+add_link_options(-shared)
+add_link_options(-fPIC)
+add_link_options(-fuse-ld=lld)
+add_link_options(-Wl,-Bsymbolic-functions)
