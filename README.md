@@ -15,5 +15,8 @@ but for any other purpose, it should build with any clang version that supports 
 TODO:
 - match functions
 - match data sections (.bss is matching, the others need some work)
+  - `-Wl,-z now` seems to add both a bind now entry and a flags entry to `.dynamic` but official rtld only has the flags entry
+  - check which functions need `.eh_frame` entries
+- unified code style
 
 inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there

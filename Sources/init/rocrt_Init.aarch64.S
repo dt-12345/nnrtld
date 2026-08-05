@@ -36,8 +36,6 @@ __rocrt_init:
     .word   __rocrt - 1b
     .word   __rocrt_ver - 1b
 
-/* RTLD END */
-
     .section ".rocrt.initro", "a"
     .align  2
     .global __rocrt_initro
