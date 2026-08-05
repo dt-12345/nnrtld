@@ -51,7 +51,7 @@ target_link_options(${MODULE_NAME} PRIVATE -Wl,--gc-sections)
 target_link_options(${MODULE_NAME} PRIVATE -Wl,--shared)
 target_link_options(${MODULE_NAME} PRIVATE -Wl,-z,now)
 target_link_options(${MODULE_NAME} PRIVATE -Wl,--hash-style=gnu)
-# target_link_options(${MODULE_NAME} PRIVATE -Wl,--build-id=sha1)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,--build-id=sha1)
 target_link_options(${MODULE_NAME} PRIVATE -T${PROJECT_SOURCE_DIR}/LinkerScripts/aarch64.ld)
 target_link_options(${MODULE_NAME} PRIVATE -Wl,--soname=${MODULE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
 target_link_options(${MODULE_NAME} PRIVATE -Wl,-init=_init,-fini=_fini) # probably not strictly necessary
