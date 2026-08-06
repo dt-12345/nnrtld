@@ -6,7 +6,7 @@
 
 namespace nn::ro {
 
-extern void BindEntry();
+void BindEntry();
 
 namespace detail {
 
