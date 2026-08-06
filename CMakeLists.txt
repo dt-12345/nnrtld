@@ -24,8 +24,8 @@ add_executable(${MODULE_NAME}
     Sources/ro/detail/detail_ModuleHeader.cpp
     Sources/ro/detail/detail_RoModule.cpp
     Sources/ro/detail/detail_Rocrt.cpp
-    Sources/ro/detail/detail_RuntimeResolver.S
-    Sources/ro/detail/detail_UserExceptionHandler.S
+    Sources/ro/ro_Bind.S
+    Sources/ro/ro_UserExceptionHandler.S
 
     Sources/rocrt/detail/detail_Musl.cpp
     Sources/rocrt/detail/detail_Relro.cpp

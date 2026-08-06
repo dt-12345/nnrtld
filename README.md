@@ -19,5 +19,6 @@ TODO:
   - check which functions need `.eh_frame` entries
 - unified code style
 - build instructions + tools for checking matches/progress
+- stub sdk shared library so we don't have to compile rtld as a shared library (bc it shouldn't be)
 
 inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there

@@ -502,7 +502,7 @@ void RoModule::Relocate(
 
     if (m_ArchData.pltGot != nullptr) {
         m_ArchData.pltGot[1] = reinterpret_cast<Elf64_Xword>(this);
-        m_ArchData.pltGot[2] = reinterpret_cast<Elf64_Xword>(RuntimeResolve);
+        m_ArchData.pltGot[2] = reinterpret_cast<Elf64_Xword>(BindEntry);
     }
 }
 
@@ -516,7 +516,7 @@ uintptr_t RoModule::BindJumpSlotRela(std::uint32_t index) {
     const auto sym = m_ArchData.symTable + ELF64_R_SYM(rel->r_info);
 
     uintptr_t target_addr;
-    if (!TryResolveSymbol(&target_addr, sym, nullptr, RuntimeResolve, LookupGlobalAuto, g_LookupGlobalManualFunctionPointer)) {
+    if (!TryResolveSymbol(&target_addr, sym, nullptr, BindEntry, LookupGlobalAuto, g_LookupGlobalManualFunctionPointer)) {
         diag::detail::Puts("[rtld] warning: unresolved symbol = '");
         diag::detail::Puts(m_ArchData.strTable + sym->st_name);
         diag::detail::Puts("'\n");
@@ -527,6 +527,7 @@ uintptr_t RoModule::BindJumpSlotRela(std::uint32_t index) {
     return address;
 }
 
+// based on the sdk, this is supposed to be nn::ro::detail::Bind and not a member function but whatever
 uintptr_t RoModule::BindJumpSlot(std::uint32_t index) {
     if ((m_ArchData.flags & ArchData::Flags_PltRela) == 0) {
         return BindJumpSlotRel(index);

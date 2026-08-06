@@ -194,7 +194,7 @@ void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn) {
     for (auto& module : util::GetReference(g_AutoLoadList)) {
         module.Relocate(
             !module.IsBindNow(),
-            RuntimeResolve,
+            BindEntry,
             LookupGlobalAuto,
             g_LookupGlobalManualFunctionPointer,
             g_RoDebugFlag,

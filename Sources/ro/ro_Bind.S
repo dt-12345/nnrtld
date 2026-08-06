@@ -1,11 +1,11 @@
 	.section ".text","ax"
-	.global RuntimeResolve
-    .hidden RuntimeResolve
-	.type RuntimeResolve, %function
+	.global _ZN2nn2ro9BindEntryEv
+    .hidden _ZN2nn2ro9BindEntryEv
+	.type _ZN2nn2ro9BindEntryEv, %function
 	.align 2
 	.cfi_startproc
 
-RuntimeResolve:
+_ZN2nn2ro9BindEntryEv:
     // x16 is a pointer to the resolver slot (.got.plt + 0x10)
     // sp[0] contains a pointer to the .got.plt slot to overwrite
     // sp[1] contains x30 (lr)

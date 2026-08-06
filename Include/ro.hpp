@@ -4,7 +4,11 @@
 #include "rocrt.hpp"
 #include "svc.hpp"
 
-namespace nn::ro::detail {
+namespace nn::ro {
+
+extern void BindEntry();
+
+namespace detail {
 
 using LookupGlobalManualFunc = uintptr_t (const RoModule*, const char*);
 using RoModuleList = util::IntrusiveList<RoModule, RoModule::GetListNodeOffset()>;
@@ -28,7 +32,8 @@ StartCallback* GetSetUserExceptionHandlerReady();
 StartCallback* GetInitializeModules();
 StartCallback* GetFinalizeModules();
 
-extern "C" void RuntimeResolve();
 std::uint32_t GetRocrtVersion(uintptr_t address);
 
-} // namespace nn::ro::detail
+} // namespace detail
+
+} // namespace nn::ro
