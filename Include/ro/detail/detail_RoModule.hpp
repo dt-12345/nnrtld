@@ -14,6 +14,10 @@ public:
 
     RoModule() = default;
 
+    void Reset() {
+        m_ListNode = {};
+    }
+
     void Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* dyn, std::uint8_t flags, void (*error_callback)(std::uint32_t code));
 
     void FixRelativeRelocations(LogFunc error_callback);
@@ -56,8 +60,6 @@ public:
         }
     }
 
-    static void RelocationError(const char* msg);
-    static void RelocationWarning(const char* msg);
     static void InitializeSelfError(std::uint32_t);
     static void InitializeError(std::uint32_t);
 

@@ -4,7 +4,7 @@
 
 namespace nn::rocrt::detail {
 
-void ProtectRelro(const void* relro, const void* relroEnd, const void* fullRelroEnd, const void* pModule, const void* pVersion) noexcept {
+void ProtectRelro(const void* relro, const void* relroEnd, const void* fullRelroEnd, const void* pModule, const void* /* pVersion */) noexcept {
     auto module = static_cast<const ro::detail::RoModule*>(pModule);
 
     if (module->GetUnk20() != 0) {

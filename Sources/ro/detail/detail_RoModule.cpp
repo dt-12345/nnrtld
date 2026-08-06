@@ -157,7 +157,7 @@ bool RoModule::TryResolveSymbol(
     uintptr_t* target,
     Elf64_Sym* sym,
     bool* is_manual,
-    void (*jump_slot_resolver)(),
+    void (* /* jump_slot_resolver */)(),
     uintptr_t (*lookup_auto)(const char*),
     uintptr_t (*lookup_manual)(const RoModule*, const char*)
 ) const {
@@ -196,17 +196,17 @@ void RoModule::RtldLogUnresolvedSymbol(const Elf64_Sym* sym) const {
     diag::detail::Puts("'\n");
 }
 
-void RoModule::FixRelativeRel(const Elf64_Rel* rel, LogFunc error_callback) {
+void RoModule::FixRelativeRel(const Elf64_Rel* /* rel */, LogFunc error_callback) {
     error_callback("RoModule::FixRelativeRel is called");
 }
 
-void RoModule::FixRelativeRela(const Elf64_Rela* rel, LogFunc error_callback) {
+void RoModule::FixRelativeRela(const Elf64_Rela* rel, LogFunc /* error_callback */) {
     if (ELF64_R_TYPE(rel->r_info) == R_AARCH64_RELATIVE) {
         *reinterpret_cast<uintptr_t*>(m_Base + rel->r_offset) = m_Base + rel->r_addend;
     }
 }
 
-void RoModule::FixRelativeRelr(const Elf64_Dyn* dyn, LogFunc error_callback) {
+void RoModule::FixRelativeRelr(const Elf64_Dyn* dyn, LogFunc /* error_callback */) {
     const Elf64_Relr* relr = nullptr;
     Elf64_Xword relr_size = 0;
 
@@ -255,7 +255,7 @@ void RoModule::FixRelativeRelocations(LogFunc error_callback) {
     FixRelativeRelr(m_ArchData.dyn, error_callback);
 }
 
-void RoModule::RelocationError(const char* msg) {
+void Unexpected(const char* msg) {
     diag::detail::Puts(msg);
     diag::detail::Abort();
 }
@@ -373,12 +373,12 @@ StartCallback* GetFinalizeModules() {
 }
 
 void RoModule::RelocateRel(
-    const Elf64_Rel* rel,
-    void (*jump_slot_resolver)(),
-    uintptr_t (*lookup_auto)(const char*),
-    uintptr_t (*lookup_manual)(const RoModule*, const char*),
-    bool debug,
-    LogFunc warning_callback,
+    const Elf64_Rel* /* rel */,
+    void (* /* jump_slot_resolver */)(),
+    uintptr_t (* /* lookup_auto */)(const char*),
+    uintptr_t (* /* lookup_manual */)(const RoModule*, const char*),
+    bool /* debug */,
+    LogFunc /* warning_callback */,
     LogFunc error_callback
 ) {
     error_callback("RoModule::RelocateRel is called");
@@ -404,7 +404,7 @@ void RoModule::RelocateRela(
             if (TryResolveSymbol(&target_addr, sym, &manual, jump_slot_resolver, lookup_auto, lookup_manual)) {
                 *reinterpret_cast<uintptr_t*>(m_Base + rel->r_offset) = target_addr + rel->r_addend;
 
-                if (target_addr == 0 || (manual && target_addr < m_Base || target_addr >= m_Base + m_ArchData.moduleSize)) {
+                if (target_addr == 0 || (manual && (target_addr < m_Base || target_addr >= m_Base + m_ArchData.moduleSize))) {
                     m_ArchData.flags |= ArchData::Flags_HasUnresolved;
                 }
             } else {
@@ -424,13 +424,13 @@ void RoModule::RelocateRela(
 }
 
 void RoModule::RelocatePltRel(
-    const Elf64_Rel* rel,
-    bool lazy,
-    void (*jump_slot_resolver)(),
-    uintptr_t (*lookup_auto)(const char*),
-    uintptr_t (*lookup_manual)(const RoModule*, const char*),
-    bool debug,
-    LogFunc warning_callback,
+    const Elf64_Rel* /* rel */,
+    bool /* lazy */,
+    void (* /* jump_slot_resolver */)(),
+    uintptr_t (* /* lookup_auto */)(const char*),
+    uintptr_t (* /* lookup_manual */)(const RoModule*, const char*),
+    bool /* debug */,
+    LogFunc /* warning_callback */,
     LogFunc error_callback
 ) {
     error_callback("RoModule::RelocatePltRel is called");
@@ -506,8 +506,8 @@ void RoModule::Relocate(
     }
 }
 
-uintptr_t RoModule::BindJumpSlotRel(std::uint32_t index) {
-    RelocationError("RoModule::BindJumpSlotRel is called");
+uintptr_t RoModule::BindJumpSlotRel(std::uint32_t /* index */) {
+    Unexpected("RoModule::BindJumpSlotRel is called");
     return 0;
 }
 
@@ -536,7 +536,7 @@ uintptr_t RoModule::BindJumpSlot(std::uint32_t index) {
     }
 }
 
-void RoModule::RelocationWarning(const char* msg) {
+void Puts(const char* msg) {
     diag::detail::Puts(msg);
 }
 

@@ -1,6 +1,6 @@
 [submodule "toolchain/musl"]
-	path = toolchain/musl
+	path = Toolchain/musl
 	url = https://github.com/open-ead/botw-lib-musl.git
 [submodule "tools/nso-tools"]
-	path = tools/nso-tools
+	path = Tools/nso-tools
 	url = https://github.com/dt-12345/nso-tools.git

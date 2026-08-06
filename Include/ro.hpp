@@ -32,6 +32,9 @@ StartCallback* GetSetUserExceptionHandlerReady();
 StartCallback* GetInitializeModules();
 StartCallback* GetFinalizeModules();
 
+void Puts(const char* msg);
+void Unexpected(const char* msg);
+
 std::uint32_t GetRocrtVersion(uintptr_t address);
 
 } // namespace detail

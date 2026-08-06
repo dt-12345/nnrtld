@@ -5,23 +5,23 @@ import shutil
 import subprocess
 
 def build_tools():
-    if os.path.exists("tools/elf2nso"):
+    if os.path.exists("Tools/elf2nso"):
         return
-    if not os.path.exists("tools/elf2nso/build"):
+    if not os.path.exists("Tools/elf2nso/build"):
         try:
             subprocess.run([
-                "cmake", "-B", "tools/nso-tools/build", "-S", "tools/nso-tools", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"
+                "cmake", "-B", "Tools/nso-Tools/build", "-S", "Tools/nso-tools", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"
             ]).check_returncode()
         except subprocess.CalledProcessError:
-            shutil.rmtree("tools/nso-tools/build")
+            shutil.rmtree("Tools/nso-Tools/build")
             raise
     subprocess.run([
-        "ninja", "-C", "tools/nso-tools/build"
+        "ninja", "-C", "Tools/nso-Tools/build"
     ]).check_returncode()
-    shutil.copy2("tools/nso-tools/build/elf2nso", "tools/elf2nso")
+    shutil.copy2("Tools/nso-Tools/build/elf2nso", "Tools/elf2nso")
 
 def build_rtld(clean: bool):
-    if clean:
+    if clean and os.path.exists("build"):
         shutil.rmtree("build")
     if not os.path.exists("build"):
         subprocess.run([

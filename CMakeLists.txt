@@ -47,22 +47,25 @@ add_executable(${MODULE_NAME}
 target_compile_options(${MODULE_NAME} PRIVATE
     -fno-rtti -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -ffunction-sections -fdata-sections -fvisibility=hidden
 )
-target_link_options(${MODULE_NAME} PRIVATE -Wl,--exclude-libs,ALL)
-target_link_options(${MODULE_NAME} PRIVATE -Wl,--no-export-dynamic)
-target_link_options(${MODULE_NAME} PRIVATE -Wl,--gc-sections)
-target_link_options(${MODULE_NAME} PRIVATE -Wl,--shared)
-target_link_options(${MODULE_NAME} PRIVATE -Wl,-z,now)
-target_link_options(${MODULE_NAME} PRIVATE -Wl,-z,pack-relative-relocs)
-target_link_options(${MODULE_NAME} PRIVATE -Wl,--hash-style=gnu)
-target_link_options(${MODULE_NAME} PRIVATE -Wl,--build-id=sha1)
+
+target_compile_options(${MODULE_NAME} PRIVATE -Wall -Wextra -Werror)
+
 target_link_options(${MODULE_NAME} PRIVATE -T${PROJECT_SOURCE_DIR}/LinkerScripts/aarch64.ld)
+target_link_options(${MODULE_NAME} PRIVATE --shared)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,--build-id=sha1)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,--exclude-libs,ALL)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,--gc-sections)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,--hash-style=gnu)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,--no-export-dynamic)
 target_link_options(${MODULE_NAME} PRIVATE -Wl,--soname=${MODULE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
 target_link_options(${MODULE_NAME} PRIVATE -Wl,-init=_init,-fini=_fini) # probably not strictly necessary
+target_link_options(${MODULE_NAME} PRIVATE -Wl,-z,now)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,-z,pack-relative-relocs)
 
 set_target_properties(${MODULE_NAME} PROPERTIES LINK_DEPENDS ${PROJECT_SOURCE_DIR}/LinkerScripts/aarch64.ld)
 
 target_include_directories(${MODULE_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ ${PROJECT_SOURCE_DIR}/Include/ ${PROJECT_SOURCE_DIR}/Libraries/aarch64/string/aarch64/)
 
 add_custom_command(TARGET ${MODULE_NAME} POST_BUILD
-    COMMAND ${PROJECT_SOURCE_DIR}/tools/elf2nso -o ${CMAKE_CURRENT_BINARY_DIR}/rtld ${CMAKE_CURRENT_BINARY_DIR}/${MODULE_NAME}${CMAKE_EXECUTABLE_SUFFIX}
+    COMMAND ${PROJECT_SOURCE_DIR}/Tools/elf2nso -o ${CMAKE_CURRENT_BINARY_DIR}/rtld ${CMAKE_CURRENT_BINARY_DIR}/${MODULE_NAME}${CMAKE_EXECUTABLE_SUFFIX}
 )

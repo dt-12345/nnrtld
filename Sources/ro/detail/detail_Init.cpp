@@ -159,21 +159,21 @@ void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn) {
                 memset(bss, 0, header->bss_end_offset - header->bss_start_offset);
             }
 
-            auto module = reinterpret_cast<util::TypedStorage<RoModule>*>(reinterpret_cast<uintptr_t>(header) + header->ro_module_offset);
-            util::ConstructAt(*module);
+            auto module = reinterpret_cast<RoModule*>(reinterpret_cast<uintptr_t>(header) + header->ro_module_offset);
+            module->Reset();
             auto end = util::AlignUp(reinterpret_cast<uintptr_t>(header) + header->bss_end_offset, 0x1000ul);
             while (memory_info.size > end - memory_info.address) {
                 /* ... */
             }
-            util::GetReference(*module).Initialize(
+            module->Initialize(
                 memory_info.address,
                 end - memory_info.address,
                 reinterpret_cast<Elf64_Dyn*>(reinterpret_cast<uintptr_t>(header) + header->dynamic_offset),
                 0,
                 RoModule::InitializeError
             );
-            util::GetReference(*module).FixRelativeRelocations(RoModule::RelocationError);
-            util::GetReference(g_AutoLoadList).InsertBack(util::GetPointer(*module));
+            module->FixRelativeRelocations(Unexpected);
+            util::GetReference(g_AutoLoadList).InsertBack(module);
         }
 
         const auto last_address = current_address;
@@ -198,8 +198,8 @@ void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn) {
             LookupGlobalAuto,
             g_LookupGlobalManualFunctionPointer,
             g_RoDebugFlag,
-            RoModule::RelocationWarning,
-            RoModule::RelocationError
+            Puts,
+            Unexpected
         );
     }
 }
