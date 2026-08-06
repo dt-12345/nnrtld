@@ -6,6 +6,10 @@ based on the rtld shipped with SDK version 20.5.6
 - the build id seems to vary by game/version, but everything else is identical
 - I haven't checked how lld generates the build id, but it likely includes parts of the ELF that aren't included in the NSO
 
+rtld appears to be compiled (or at least linked) alongside the game, so it follows optimization flags from the game
+
+i.e. if a game is compiled with PGO, then rltd is also compiled with PGO
+
 most functions do not match, but I would like to eventually get them there
 
 function names and TU splits are mostly just guesses - some are based on the `rocrt` from [Nintendo OSS](https://support.nintendo.com/jp/oss/index.html)
