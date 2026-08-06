@@ -1,6 +1,5 @@
 #include "diag.hpp"
 #include "ro.hpp"
-#include "util.hpp"
 
 namespace nn {
 
@@ -257,8 +256,8 @@ void RoModule::FixRelativeRelocations(LogFunc error_callback) {
 }
 
 void RoModule::RelocationError(const char* msg) {
-    svc::OutputDebugString(msg, strlen(msg));
-    svc::Break(0, 0, 0);
+    diag::detail::Puts(msg);
+    diag::detail::Abort();
 }
 
 static Elf64_Word CalcElfHash(const char* name) {
@@ -537,15 +536,15 @@ uintptr_t RoModule::BindJumpSlot(std::uint32_t index) {
 }
 
 void RoModule::RelocationWarning(const char* msg) {
-    svc::OutputDebugString(msg, strlen(msg));
+    diag::detail::Puts(msg);
 }
 
 void RoModule::InitializeSelfError(std::uint32_t) {
-    svc::Break(0, 0, 0);
+    diag::detail::Abort();
 }
 
 void RoModule::InitializeError(std::uint32_t) {
-    svc::Break(0, 0, 0);
+    diag::detail::Abort();
 }
 
 
