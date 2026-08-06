@@ -53,7 +53,7 @@
    The loop tail is handled by always copying 64 bytes from the end.
 */
 
-.section .text.__memcpy_aarch64, "ax", %progbits
+.section ".text", "ax", %progbits
 .global __memcpy_aarch64
 .hidden __memcpy_aarch64
 .type __memcpy_aarch64, %function

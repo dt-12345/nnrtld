@@ -3,6 +3,8 @@
 shitty rtld decompilation (well, reimplementation currently bc decompilation is hard)
 
 based on the rtld shipped with SDK version 20.5.6
+- the build id seems to vary by game/version, but everything else is identical
+- I haven't checked how lld generates the build id, but it likely includes parts of the ELF that aren't included in the NSO
 
 most functions do not match, but I would like to eventually get them there
 

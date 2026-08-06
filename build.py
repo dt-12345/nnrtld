@@ -5,15 +5,16 @@ import shutil
 import subprocess
 
 def build_tools():
-    if os.path.exists("tools/nso-tools/build"):
+    if os.path.exists("tools/elf2nso"):
         return
-    try:
-        subprocess.run([
-            "cmake", "-B", "tools/nso-tools/build", "-S", "tools/nso-tools", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"
-        ]).check_returncode()
-    except subprocess.CalledProcessError:
-        shutil.rmtree("tools/nso-tools/build")
-        raise
+    if not os.path.exists("tools/elf2nso/build"):
+        try:
+            subprocess.run([
+                "cmake", "-B", "tools/nso-tools/build", "-S", "tools/nso-tools", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"
+            ]).check_returncode()
+        except subprocess.CalledProcessError:
+            shutil.rmtree("tools/nso-tools/build")
+            raise
     subprocess.run([
         "ninja", "-C", "tools/nso-tools/build"
     ]).check_returncode()

@@ -1,6 +1,6 @@
 #include "Config/module.h"
 
-.section ".text.crt0","ax"
+.section ".text.crt0", "ax", %progbits
 .extern memset
 .extern _ZN2nn5rocrt6detail10InitializeEmP9Elf64_Dyn
 .extern _ZN2nn2ro6detail10InitializeEmP9Elf64_Dyn

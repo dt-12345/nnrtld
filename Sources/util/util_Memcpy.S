@@ -1,6 +1,6 @@
 .extern __memcpy_aarch64
 
-.section ".text","ax"
+.section ".text", "ax", %progbits
 .global memcpy
 .hidden memcpy
 .type memcpy, %function

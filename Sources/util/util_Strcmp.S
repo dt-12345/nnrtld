@@ -1,4 +1,4 @@
-.section ".text","ax"
+.section ".text", "ax", %progbits
 .global strcmp
 .hidden strcmp
 .type strcmp, %function

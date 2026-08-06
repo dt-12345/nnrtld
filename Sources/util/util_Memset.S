@@ -1,4 +1,4 @@
-.section ".text","ax"
+.section ".text", "ax", %progbits
 .global memset
 .hidden memset
 .type memset, %function

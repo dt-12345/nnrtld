@@ -1,4 +1,4 @@
-.section ".text", "ax"
+.section ".text", "ax", %progbits
 .global strlen
 .hidden strlen
 .type strlen, %function
