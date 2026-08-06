@@ -547,7 +547,6 @@ void RoModule::InitializeError(std::uint32_t) {
     diag::detail::Abort();
 }
 
-
 } // namespace ro::detail
 
 } // namespace nn
