@@ -41,7 +41,7 @@ struct ArchData {
     };
     Elf64_Xword sharedObjectNameOffset;
     uintptr_t moduleSize;
-    uint8_t _90; // 0x14
+    uint8_t sdkVersion;
     char _91[2];
     uint8_t flags;
     uintptr_t defaultPltGot;

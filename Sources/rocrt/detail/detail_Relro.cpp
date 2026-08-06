@@ -15,11 +15,11 @@ void ProtectRelro(const void* relro, const void* relroEnd, const void* fullRelro
     if ((module->IsBindNow() || !module->HasUnresolved()) && end != relro) {
         const auto size = reinterpret_cast<uintptr_t>(end) - reinterpret_cast<uintptr_t>(relro);
         if (svc::SetMemoryPermission(relro, size, svc::MemoryPermission_Read)) {
-            diag::detail::RtldAbort();
+            svc::Break(0, 0, 0);
         }
 
         if (svc::SetMemoryAttribute(relro, size, svc::MemoryAttribute_PermissionLocked, svc::MemoryAttribute_PermissionLocked)) {
-            diag::detail::RtldAbort();
+            svc::Break(0, 0, 0);
         }
     }
 
@@ -29,10 +29,12 @@ void ProtectRelro(const void* relro, const void* relroEnd, const void* fullRelro
         if (begin != fullRelroEnd) {
             const auto size = reinterpret_cast<uintptr_t>(fullRelroEnd) - reinterpret_cast<uintptr_t>(begin);
             if (svc::SetMemoryAttribute(begin, size, svc::MemoryAttribute_PermissionLocked, svc::MemoryAttribute_PermissionLocked)) {
-                diag::detail::RtldAbort();
+                svc::Break(0, 0, 0);
             }
         }
     }
 }
+
+void UnknownFunction() { /* ... */ }
 
 } // namespace nn::rocrt::detail

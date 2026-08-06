@@ -154,6 +154,8 @@ SECTIONS
     PROVIDE_HIDDEN(__atexit_end = .);
   } :data
 
+  . = ALIGN(0x10);
+
   .bss : {
     PROVIDE_HIDDEN(__bss_start = .);
     *(.bss .bss.*)

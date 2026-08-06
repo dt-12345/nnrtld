@@ -20,11 +20,13 @@ string(LENGTH ${MODULE_NAME} MODULE_NAME_LENGTH)
 configure_file(${PROJECT_SOURCE_DIR}/Config/module.h.in Config/module.h @ONLY)
 
 add_executable(${MODULE_NAME}
+    Sources/ro/detail/detail_Init.cpp
+    Sources/ro/detail/detail_ModuleHeader.cpp
     Sources/ro/detail/detail_RoModule.cpp
+    Sources/ro/detail/detail_Rocrt.cpp
     Sources/ro/detail/detail_RuntimeResolver.S
     Sources/ro/detail/detail_UserExceptionHandler.S
 
-    Sources/rocrt/detail/detail_Init.cpp
     Sources/rocrt/detail/detail_Musl.cpp
     Sources/rocrt/detail/detail_Relro.cpp
     Sources/rocrt/rocrt_Nso.cpp

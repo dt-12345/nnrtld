@@ -14,11 +14,6 @@
   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *--------------------------------------------------------------------------------*/
 
-/*
-  Nintendo puts __attribute__((visibility("hidden"))) on of the linker-provided symbols, but that seems to prevent them from generating a GOT entry
-  I've removed those for now, but I will need to see later if there's a way to get them to generate anyways
-*/
-
 extern "C" {
     struct AtExitEntry
     {
@@ -27,8 +22,8 @@ extern "C" {
         void* pDsoHandle;
     };
 
-    extern AtExitEntry __atexit_start[];
-    extern AtExitEntry __atexit_end[];
+    extern AtExitEntry __atexit_start[] __attribute__((visibility("hidden")));
+    extern AtExitEntry __atexit_end[] __attribute__((visibility("hidden")));
 }
 
 namespace {
@@ -112,76 +107,77 @@ namespace {
 
     using InitFiniPointerT = void(*INIT_FINI_PTRAUTH_QUALIFIER)();
 
-// #if defined(__aarch64__) && defined(__LP64__) && !(__has_feature(ptrauth_calls) && __has_feature(ptrauth_init_fini))
-//     template<InitFiniPointerT pBegin[], InitFiniPointerT pEnd[]>
-//     [[gnu::naked]] void CallFunction(InitFiniPointerT* ppFunc) noexcept
-//     {
-//         asm volatile(
-//             "    ldr  x16, [x0];"
-//             "    adrp x8, %[BeginSym];"
-//             "    add  x8, x8, :lo12:%[BeginSym];"
-//             "    cmp  x0, x8;"
-//             "    b.lo 1f;"
-//             "    adrp x8, %[EndSym];"
-//             "    add  x8, x8, :lo12:%[EndSym];"
-//             "    cmp  x0, x8;"
-//             "    b.hs 1f;"
-//             "    tst  x0, #0x7;"
-//             "    b.ne 1f;"
-//             "    br   x16;"
-//             "1:  udf #0x8003;"::
-//             [BeginSym]"S"(pBegin), [EndSym]"S"(pEnd));
-//         }
-// #else
+#if defined(__aarch64__) && defined(__LP64__) && !(__has_feature(ptrauth_calls) && __has_feature(ptrauth_init_fini))
+    template<InitFiniPointerT pBegin[], InitFiniPointerT pEnd[]>
+    [[gnu::naked]] void CallFunction(InitFiniPointerT* ppFunc) noexcept
+    {
+        asm volatile(
+            "    ldr  x16, [x0];"
+            "    adrp x8, %[BeginSym];"
+            "    add  x8, x8, :lo12:%[BeginSym];"
+            "    cmp  x0, x8;"
+            "    b.lo 1f;"
+            "    adrp x8, %[EndSym];"
+            "    add  x8, x8, :lo12:%[EndSym];"
+            "    cmp  x0, x8;"
+            "    b.hs 1f;"
+            "    tst  x0, #0x7;"
+            "    b.ne 1f;"
+            "    br   x16;"
+            "1:  udf #0x8003;"::
+            [BeginSym]"S"(pBegin), [EndSym]"S"(pEnd));
+        }
+#else
     template<InitFiniPointerT pBegin[], InitFiniPointerT pEnd[]>
     [[gnu::always_inline]] void CallFunction(InitFiniPointerT* ppFunc) noexcept
     {
         (*ppFunc)();
     }
-// #endif
+#endif
 }
 
 namespace nn { namespace rocrt {
-    extern unsigned char g_RoModule[];
+    extern unsigned char g_RoModule[] __attribute__((visibility("hidden")));
     
     namespace detail {
         void ProtectRelro(const void* relro, const void* relroEnd, const void* fullRelroEnd, const void* pModule, const void* pVersion) noexcept;
+        void UnknownFunction();
     }
 
 }}
 
 extern "C"
 {
-    extern InitFiniPointerT __init_array_start[];
-    extern InitFiniPointerT __init_array_end[];
-    extern InitFiniPointerT __fini_array_start[];
-    extern InitFiniPointerT __fini_array_end[];
-    extern unsigned char __relro_start[];
-    extern unsigned char __relro_end[];
-    extern unsigned char __full_relro_end[];
-    extern unsigned char __rocrt_ver[];
+    extern InitFiniPointerT __init_array_start[] __attribute__((visibility("hidden")));
+    extern InitFiniPointerT __init_array_end[] __attribute__((visibility("hidden")));
+    extern InitFiniPointerT __fini_array_start[] __attribute__((visibility("hidden")));
+    extern InitFiniPointerT __fini_array_end[] __attribute__((visibility("hidden")));
+    extern unsigned char __relro_start[] __attribute__((visibility("hidden")));
+    extern unsigned char __relro_end[] __attribute__((visibility("hidden")));
+    extern unsigned char __full_relro_end[] __attribute__((visibility("hidden")));
+    extern unsigned char __rocrt_ver[] __attribute__((visibility("hidden")));
 
-    extern unsigned char            __EX_start[];
-    extern unsigned char            __EX_end[];
-    extern unsigned char            __tdata_start[];
-    extern unsigned char            __tdata_end[];
-    extern unsigned char            __tdata_align_abs[];
-    extern unsigned char            __tdata_align_rel[];
-    extern unsigned char            __tbss_start[];
-    extern unsigned char            __tbss_end[];
-    extern unsigned char            __tbss_align_abs[];
-    extern unsigned char            __tbss_align_rel[];
-    extern unsigned char            __rela_dyn_start[];
-    extern unsigned char            __rela_dyn_end[];
-    extern unsigned char            __rel_dyn_start[];
-    extern unsigned char            __rel_dyn_end[];
-    extern unsigned char            __rela_plt_start[];
-    extern unsigned char            __rela_plt_end[];
-    extern unsigned char            __rel_plt_start[];
-    extern unsigned char            __rel_plt_end[];
-    extern unsigned char            __got_plt_start[];
-    extern unsigned char            __got_plt_end[];
-    extern unsigned char            _DYNAMIC[];
+    extern unsigned char            __EX_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __EX_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tdata_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tdata_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tdata_align_abs[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tdata_align_rel[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tbss_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tbss_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tbss_align_abs[] __attribute__((visibility("hidden")));
+    extern unsigned char            __tbss_align_rel[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rela_dyn_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rela_dyn_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rel_dyn_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rel_dyn_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rela_plt_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rela_plt_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rel_plt_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __rel_plt_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            __got_plt_start[] __attribute__((visibility("hidden")));
+    extern unsigned char            __got_plt_end[] __attribute__((visibility("hidden")));
+    extern unsigned char            _DYNAMIC[] __attribute__((visibility("hidden")));
     int __nnmusl_init_dso(unsigned char *EX_start, unsigned char *EX_end,
                             unsigned char *tdata_start, unsigned char *tdata_end,
                             unsigned char *tdata_align_abs, unsigned char *tdata_align_rel,
@@ -197,11 +193,11 @@ extern "C"
                             unsigned char *tdata_start, unsigned char *tdata_end,
                             unsigned char *tbss_start, unsigned char *tbss_end);
 
-    extern void* __dso_handle __attribute__ ((section(".data.rel.ro.__dso_handle")));
-    void* __dso_handle __attribute__ ((section(".data.rel.ro.__dso_handle"))) = &__dso_handle;
-    int __aeabi_atexit(void* object, void (*destroyer)(void*), void* dso_handle);
-    int __cxa_atexit(void (*destroyer)(void*), void* pObject, void* dso_handle);
-    int __cxa_finalize(void* pDsoHandle);
+    extern void* __dso_handle __attribute__ ((visibility ("hidden"), section(".data.rel.ro.__dso_handle")));
+    void* __dso_handle __attribute__ ((visibility ("hidden"), section(".data.rel.ro.__dso_handle"))) = &__dso_handle;
+    int __aeabi_atexit(void* object, void (*destroyer)(void*), void* dso_handle) __attribute__ ((visibility ("hidden")));
+    int __cxa_atexit(void (*destroyer)(void*), void* pObject, void* dso_handle) __attribute__ ((visibility ("hidden")));
+    int __cxa_finalize(void* pDsoHandle) __attribute__ ((visibility ("hidden")));
     void _init();
     void _fini();
     static volatile int nnmuslTlsInitializationPhase __attribute__((section(".data._ZL28nnmuslTlsInitializationPhase"))) = 0;
@@ -227,6 +223,8 @@ extern "C"
             }
         }
 
+        nn::rocrt::detail::UnknownFunction();
+        
         nn::rocrt::detail::ProtectRelro(__relro_start, __relro_end, __full_relro_end, nn::rocrt::g_RoModule, __rocrt_ver);
         for (InitFiniPointerT* f = __init_array_start; f < __init_array_end; ++f)
         {

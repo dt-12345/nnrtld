@@ -2,7 +2,7 @@
 
 .section ".text.crt0", "ax", %progbits
 .extern memset
-.extern _ZN2nn5rocrt6detail10InitializeEmP9Elf64_Dyn
+.extern _ZN2nn2ro6detail20InitializeSelfModuleEmP9Elf64_Dyn
 .extern _ZN2nn2ro6detail10InitializeEmP9Elf64_Dyn
 .extern _ZN2nn2ro6detail31GetSetUserExceptionHandlerReadyEv
 .extern _ZN2nn2ro6detail20GetInitializeModulesEv
@@ -40,7 +40,7 @@ __rtld_initialize:
     adr x1, __dynamic_start
     mov x20, x0
     mov x21, x1
-    bl _ZN2nn5rocrt6detail10InitializeEmP9Elf64_Dyn
+    bl _ZN2nn2ro6detail20InitializeSelfModuleEmP9Elf64_Dyn
     mov x0, x20
     mov x1, x21
     bl _ZN2nn2ro6detail10InitializeEmP9Elf64_Dyn

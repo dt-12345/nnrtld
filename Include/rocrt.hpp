@@ -6,6 +6,10 @@
 namespace nn::rocrt {
 
 constexpr inline std::uint32_t MODULE_HEADER_SIGNATURE = 0x30444f4d; // MOD0
+constexpr inline std::uint8_t NN_SDK_VERSION_MAJOR = 0x15;
+constexpr inline std::uint8_t NN_SDK_VERSION_MINOR = 0x4;
+constexpr inline std::uint8_t NN_SDK_VERSION_MICRO = 0x0;
+
 constexpr inline std::uint32_t ARM_ENTRYPOINT_BRANCH = 0xea000000;
 constexpr inline std::uint32_t AARCH64_ENTRYPOINT_BRANCH = 0x14000002;
 
@@ -48,11 +52,5 @@ inline bool HasStoredSdkVersion(const rocrt::RocrtInit* init) {
     const auto entry_instr = init->entry_instruction;
     return entry_instr == rocrt::ARM_ENTRYPOINT_BRANCH || entry_instr == 0 || entry_instr == rocrt::AARCH64_ENTRYPOINT_BRANCH;
 }
-
-namespace detail {
-
-void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn);
-
-} // namespace detail
 
 } // namespace nn::rocrt
