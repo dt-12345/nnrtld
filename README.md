@@ -23,3 +23,13 @@ TODO:
   - it's possible some functions may look similar but have similar names because rtld has separate implementations
 
 inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there
+
+notes:
+- changes from 20.x.x to 21.x.x
+  - linker symbols like `__EX_start` are now marked with `__attribute__(__visibility__("hidden"))`
+    - this can be seen in that they lost their `.got` entries and are instead accessed directly through `adr`
+  - noreturn functions are marked as such (function pointers included)
+    - this can be seen in that they no longer restore the stack before being called
+    - some seem to have `udf 0x8002` at the end as a trap as well
+    - c++'s `[[noreturn]]` doesn't seem to support function pointers so we'll use `__attribute__((__noreturn__))`
+  - `nn::ro::detail::ArchData` sdk version was updated to match
