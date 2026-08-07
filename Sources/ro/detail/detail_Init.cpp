@@ -15,6 +15,12 @@ LookupGlobalManualFunc* g_LookupGlobalManualFunctionPointer;
 util::TypedStorage<RoModuleList> g_ManualLoadList;
 util::TypedStorage<RoModuleList> g_AutoLoadList;
 
+namespace {
+void Error() {
+    while (true) { __asm__ __volatile__("" ::: "memory"); }
+}
+} // anonymouse namespace
+
 void InitializeSelfModule(uintptr_t aslr_base, Elf64_Dyn* dyn) {
     const Elf64_Rela* rela = nullptr;
     const Elf64_Relr* relr = nullptr;
@@ -29,12 +35,12 @@ void InitializeSelfModule(uintptr_t aslr_base, Elf64_Dyn* dyn) {
                 break;
             case DT_RELAENT:
                 if (dyn->d_un.d_val != sizeof(Elf64_Rela)) {
-                    while (true) { /* ... */ }
+                    Error();
                 }
                 break;
             case DT_RELENT:
                 if (dyn->d_un.d_val != sizeof(Elf64_Rel)) {
-                    while (true) { /* ... */ }
+                    Error();
                 }
                 break;
             case DT_RELRSZ:
@@ -45,7 +51,7 @@ void InitializeSelfModule(uintptr_t aslr_base, Elf64_Dyn* dyn) {
                 break;
             case DT_RELRENT:
                 if (dyn->d_un.d_val != sizeof(Elf64_Relr)) {
-                    while (true) { /* ... */ }
+                    Error();
                 }
                 break;
             case DT_RELACOUNT:
@@ -97,7 +103,7 @@ void InitializeSelfModule(uintptr_t aslr_base, Elf64_Dyn* dyn) {
     }
 
     if (rel_count) {
-        while (true) { /* ... */ }
+        Error();
     }
 
     if (relr != nullptr && relr_size >= sizeof(Elf64_Relr)) {
@@ -143,7 +149,7 @@ void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn) {
         std::uint32_t page_info;
         svc::MemoryInfo memory_info{};
         if (svc::QueryMemory(&memory_info, &page_info, current_address)) {
-            while (true) { /* ... */ }
+            Error();
         }
 
         // a valid module should start with executable code (also skip over this module because we just handled it above)
@@ -151,7 +157,7 @@ void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn) {
             const rocrt::ModuleHeader* header = nullptr;
             rocrt::ModuleVersion version{};
             if (!FindModuleHeader<svc::QueryMemory>(&header, &version, memory_info.address)) {
-                while (true) { /* ... */ }
+                Error();
             }
 
             if (header->bss_start_offset != header->bss_end_offset) {
