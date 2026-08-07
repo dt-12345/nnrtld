@@ -16,3 +16,8 @@ constexpr inline T AlignUp(T value, T align) {
 }
 
 } // namespace nn::util
+
+extern "C" void* memcpy(void* __restrict dst, const void* src, size_t size);
+extern "C" void* memset(void* dst, std::int32_t value, size_t size);
+extern "C" std::int32_t strcmp(const char* s1, const char* s2);
+extern "C" size_t strlen(const char* s);

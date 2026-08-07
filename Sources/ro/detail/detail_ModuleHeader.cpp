@@ -8,7 +8,6 @@ bool FindModuleHeader(const rocrt::ModuleHeader** out_header, rocrt::ModuleVersi
     *out_header = nullptr;
     *out_version = {};
 
-    rocrt::RocrtVersion sdk_version;
     std::uint32_t page_info;
     svc::MemoryInfo info{};
     if (QueryFunc(&info, &page_info, address)) {
@@ -32,6 +31,7 @@ bool FindModuleHeader(const rocrt::ModuleHeader** out_header, rocrt::ModuleVersi
 
     std::uint32_t module_version;
     uintptr_t module_header_addr, rocrt_version_addr;
+    rocrt::RocrtVersion sdk_version;
     
     if ((info.permission & svc::MemoryPermission_Read) == 0) {
         uintptr_t start_address;
@@ -55,7 +55,7 @@ bool FindModuleHeader(const rocrt::ModuleHeader** out_header, rocrt::ModuleVersi
         module_header_addr = start_address + reinterpret_cast<const rocrt::RocrtInit*>(start_address)->rocrt_offset;
 
         rocrt_version_addr = start_address + version_offset;
-        if (rocrt_version_addr == 0) {
+        if (rocrt_version_addr != 0) {
             sdk_version = {};
             memcpy(&sdk_version, reinterpret_cast<const void*>(rocrt_version_addr), sizeof(sdk_version));
         } else {
@@ -66,7 +66,7 @@ bool FindModuleHeader(const rocrt::ModuleHeader** out_header, rocrt::ModuleVersi
         module_header_addr = address + rocrt_init->rocrt_offset;
         if (rocrt::HasStoredSdkVersion(rocrt_init)) {
             rocrt_version_addr = address + rocrt_init->rocrt_version_offset;
-            if (rocrt_version_addr == 0) {
+            if (rocrt_version_addr != 0) {
                 sdk_version = {};
                 memcpy(&sdk_version, reinterpret_cast<const void*>(rocrt_version_addr), sizeof(sdk_version));
             } else {

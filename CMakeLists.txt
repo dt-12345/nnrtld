@@ -45,9 +45,15 @@ add_executable(${MODULE_NAME}
 )
 
 target_compile_options(${MODULE_NAME} PRIVATE
-    -fno-rtti -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -ffunction-sections -fdata-sections -fvisibility=hidden
+    -fno-rtti
+    -fno-exceptions
+    -fno-asynchronous-unwind-tables
+    -fno-unwind-tables
+    -ffunction-sections
+    -fdata-sections
+    -fvisibility=hidden
+    -fno-builtin
 )
-
 target_compile_options(${MODULE_NAME} PRIVATE -Wall -Wextra -Werror)
 
 target_link_options(${MODULE_NAME} PRIVATE -T${PROJECT_SOURCE_DIR}/LinkerScripts/aarch64.ld)
