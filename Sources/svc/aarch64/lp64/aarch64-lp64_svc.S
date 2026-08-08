@@ -1,5 +1,5 @@
 .macro SVC_BEGIN name
-	.section .text.\name, "ax", %progbits
+	.section ".text", "ax", %progbits
 	.global \name
 	.hidden \name
 	.type \name, %function
@@ -25,8 +25,9 @@ SVC_END _ZN2nn3svc7aarch644lp6418SetMemoryAttributeEPKvmjj
 SVC_BEGIN _ZN2nn3svc7aarch644lp6411QueryMemoryEPNS2_10MemoryInfoEPjm
 	str x1, [sp, #-16]!
 	svc 0x6
-	ldr x2, [sp], #16
+	ldr x2, [sp]
 	str w1, [x2]
+	add sp, sp, #0x10
 	ret
 SVC_END _ZN2nn3svc7aarch644lp6411QueryMemoryEPNS2_10MemoryInfoEPjm
 

@@ -332,6 +332,23 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* dyn, std::
                     m_ArchData.flags |= ArchData::Flags_BindNow;
                 }
                 break;
+
+            case DT_NULL:
+            case DT_RPATH:
+            case DT_SYMBOLIC:
+            case DT_DEBUG:
+            case DT_TEXTREL:
+            case DT_INIT_ARRAY:
+            case DT_FINI_ARRAY:
+            case DT_INIT_ARRAYSZ:
+            case DT_FINI_ARRAYSZ:
+            case DT_RUNPATH:
+            case DT_ENCODING:
+            case DT_PREINIT_ARRAYSZ:
+            case DT_SYMTAB_SHNDX:
+            case DT_RELRSZ:
+            case DT_RELR:
+                break;
         }
     }
 

@@ -9,60 +9,17 @@ extern util::TypedStorage<ro::detail::RoModule> g_RoModule;
 
 namespace ro::detail {
 
-bool RoModule::TryResolveSymbol(
-    uintptr_t* target,
-    Elf64_Sym* sym,
-    bool* is_manual,
-    void (* /* jump_slot_resolver */)(),
-    uintptr_t (*lookup_auto)(const char*),
-    uintptr_t (*lookup_manual)(const RoModule*, const char*)
-) const {
-    const char* name = m_ArchData.strTable + sym->st_name;
-
-    uintptr_t target_addr = 0;
-    if (ELF64_ST_VISIBILITY(sym->st_other) == STV_DEFAULT) {
-        target_addr = lookup_auto(name);
-        if (lookup_manual != nullptr && target_addr == 0) {
-            target_addr = lookup_manual(this, name);
-            if (is_manual) {
-                *is_manual = true;
-            }
-        } else {
-            if (is_manual) {
-                *is_manual = false;
-            }
-        }
-    } else {
-        if (is_manual) {
-            *is_manual = false;
-        }
-
-        if (auto resolved_sym = LookupSymbol(name)) {
-            target_addr = m_Base + resolved_sym->st_value;
-        }
-    }
-
-    *target = target_addr;
-    return target_addr != 0 || ELF64_ST_BIND(sym->st_info) == STB_WEAK;
-}
-
-void RoModule::RtldLogUnresolvedSymbol(const Elf64_Sym* sym) const {
-    diag::detail::Puts("[rtld] warning: unresolved symbol = '");
-    diag::detail::Puts(m_ArchData.strTable + sym->st_name);
-    diag::detail::Puts("'\n");
-}
-
-void RoModule::FixRelativeRel(const Elf64_Rel* /* rel */, LogFunc error_callback) {
+void RoModule::FixRelativeRel(const Elf64_Rel* /* rel */, ErrorFunc error_callback) {
     error_callback("RoModule::FixRelativeRel is called");
 }
 
-void RoModule::FixRelativeRela(const Elf64_Rela* rel, LogFunc /* error_callback */) {
+void RoModule::FixRelativeRela(const Elf64_Rela* rel, ErrorFunc /* error_callback */) {
     if (ELF64_R_TYPE(rel->r_info) == R_AARCH64_RELATIVE) {
         *reinterpret_cast<uintptr_t*>(m_Base + rel->r_offset) = m_Base + rel->r_addend;
     }
 }
 
-void RoModule::FixRelativeRelr(const Elf64_Dyn* dyn, LogFunc /* error_callback */) {
+void RoModule::FixRelativeRelr(const Elf64_Dyn* dyn, ErrorFunc /* error_callback */) {
     const Elf64_Relr* relr = nullptr;
     Elf64_Xword relr_size = 0;
 
@@ -98,7 +55,7 @@ void RoModule::FixRelativeRelr(const Elf64_Dyn* dyn, LogFunc /* error_callback *
     }
 }
 
-void RoModule::FixRelativeRelocations(LogFunc error_callback) {
+void RoModule::FixRelativeRelocations(ErrorFunc error_callback) {
     // fix relocations found in this module
     for (size_t i = 0; i < m_ArchData.relEntryCount; ++i) {
         FixRelativeRel(m_Rel + i, error_callback);
@@ -114,6 +71,7 @@ void RoModule::FixRelativeRelocations(LogFunc error_callback) {
 void Unexpected(const char* msg) {
     diag::detail::Puts(msg);
     diag::detail::Abort();
+    __asm__ __volatile__("udf 0x8002" ::: "memory");
 }
 
 static Elf64_Word CalcElfHash(const char* name) {
@@ -190,8 +148,13 @@ Elf64_Sym* RoModule::LookupSymbol(const char* name) const {
 
 uintptr_t LookupGlobalAuto(const char* name) {
     for (const auto& module : util::GetReference(g_AutoLoadList)) {
-        if (auto sym = module.GetNonLocalSymbol(name)) {
-            return module.GetBase() + sym->st_value;
+        if (auto sym = module.LookupSymbol(name)) {
+            switch (ELF64_ST_BIND(sym->st_info)) {
+                case STB_LOCAL:
+                    break;
+                default:
+                    return module.GetBase() + sym->st_value;
+            }
         }
     }
 
@@ -199,6 +162,10 @@ uintptr_t LookupGlobalAuto(const char* name) {
 }
 
 void InitializeModules() {
+    if (util::GetReference(g_AutoLoadList).IsEmpty()) [[unlikely]] {
+        return;
+    }
+
     for (auto& module : util::GetReference(g_AutoLoadList).reverse()) {
         if (module.GetArchData().dtInit) {
             module.GetArchData().dtInit();
@@ -228,14 +195,51 @@ StartCallback* GetFinalizeModules() {
     return FinalizeModules;
 }
 
+bool RoModule::TryResolveSymbol(
+    uintptr_t* target,
+    Elf64_Sym* sym,
+    bool* is_manual,
+    void (* /* jump_slot_resolver */)(),
+    uintptr_t (*lookup_auto)(const char*),
+    uintptr_t (*lookup_manual)(const RoModule*, const char*)
+) const {
+    const char* name = m_ArchData.strTable + sym->st_name;
+
+    uintptr_t target_addr = 0;
+    if (ELF64_ST_VISIBILITY(sym->st_other) == STV_DEFAULT) {
+        target_addr = lookup_auto(name);
+        if (lookup_manual != nullptr && target_addr == 0) {
+            target_addr = lookup_manual(this, name);
+            if (is_manual) {
+                *is_manual = true;
+            }
+        } else {
+            if (is_manual) {
+                *is_manual = false;
+            }
+        }
+    } else {
+        if (is_manual) {
+            *is_manual = false;
+        }
+
+        if (auto resolved_sym = LookupSymbol(name)) {
+            target_addr = m_Base + resolved_sym->st_value;
+        }
+    }
+
+    *target = target_addr;
+    return target_addr != 0 || ELF64_ST_BIND(sym->st_info) == STB_WEAK;
+}
+
 void RoModule::RelocateRel(
     const Elf64_Rel* /* rel */,
     void (* /* jump_slot_resolver */)(),
     uintptr_t (* /* lookup_auto */)(const char*),
     uintptr_t (* /* lookup_manual */)(const RoModule*, const char*),
     bool /* debug */,
-    LogFunc /* warning_callback */,
-    LogFunc error_callback
+    WarningFunc /* warning_callback */,
+    ErrorFunc error_callback
 ) {
     error_callback("RoModule::RelocateRel is called");
 }
@@ -246,8 +250,8 @@ void RoModule::RelocateRela(
     uintptr_t (*lookup_auto)(const char*),
     uintptr_t (*lookup_manual)(const RoModule*, const char*),
     bool debug,
-    LogFunc warning_callback,
-    LogFunc error_callback
+    WarningFunc warning_callback,
+    ErrorFunc error_callback
 ) {
     switch (ELF64_R_TYPE(rel->r_info)) {
         case R_AARCH64_ABS16:
@@ -276,6 +280,7 @@ void RoModule::RelocateRela(
         }
         case R_AARCH64_COPY:
             error_callback("R_COPY is not supported");
+            break;
     }
 }
 
@@ -286,8 +291,8 @@ void RoModule::RelocatePltRel(
     uintptr_t (* /* lookup_auto */)(const char*),
     uintptr_t (* /* lookup_manual */)(const RoModule*, const char*),
     bool /* debug */,
-    LogFunc /* warning_callback */,
-    LogFunc error_callback
+    WarningFunc /* warning_callback */,
+    ErrorFunc error_callback
 ) {
     error_callback("RoModule::RelocatePltRel is called");
 }
@@ -299,8 +304,8 @@ void RoModule::RelocatePltRela(
     uintptr_t (*lookup_auto)(const char*),
     uintptr_t (*lookup_manual)(const RoModule*, const char*),
     bool debug,
-    LogFunc warning_callback,
-    LogFunc error_callback
+    WarningFunc warning_callback,
+    ErrorFunc error_callback
 ) {
     if (ELF64_R_TYPE(rel->r_info) != R_AARCH64_JUMP_SLOT) {
         return;
@@ -334,8 +339,8 @@ void RoModule::Relocate(
     uintptr_t (*lookup_auto)(const char*),
     uintptr_t (*lookup_manual)(const RoModule*, const char*),
     bool debug,
-    LogFunc warning_callback,
-    LogFunc error_callback
+    WarningFunc warning_callback,
+    ErrorFunc error_callback
 ) {
     // fix relocations for imported symbols
     for (size_t i = m_ArchData.relEntryCount; i < m_ArchData.relSize / sizeof(Elf64_Rel); ++i) {
@@ -396,11 +401,11 @@ void Puts(const char* msg) {
     diag::detail::Puts(msg);
 }
 
-void RoModule::InitializeSelfError(std::uint32_t) {
+[[noreturn]] void RoModule::InitializeSelfError(std::uint32_t) {
     diag::detail::Abort();
 }
 
-void RoModule::InitializeError(std::uint32_t) {
+[[noreturn]] void RoModule::InitializeError(std::uint32_t) {
     diag::detail::Abort();
 }
 

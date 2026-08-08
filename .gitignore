@@ -1,4 +1,5 @@
-build/*
+build*/*
 .cache/*
+data/*
 
 Tools/elf2nso

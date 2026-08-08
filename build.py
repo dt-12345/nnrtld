@@ -20,23 +20,24 @@ def build_tools():
     ]).check_returncode()
     shutil.copy2("Tools/nso-Tools/build/elf2nso", "Tools/elf2nso")
 
-def build_rtld(clean: bool):
-    if clean and os.path.exists("build"):
-        shutil.rmtree("build")
-    if not os.path.exists("build"):
+def build_rtld(clean: bool, test: bool):
+    build_path: str = "build_test" if test else "build"
+    build_type: str = "-DCMAKE_BUILD_TYPE=RelWithDebugInfo" if test else "-DCMAKE_BUILD_TYPE=Release"
+    if clean and os.path.exists(build_path):
+        shutil.rmtree(build_path)
+    if not os.path.exists(build_path):
         subprocess.run([
-            "cmake", "-B", "build", "-S", ".", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release", "--toolchain=cmake/toolchain.cmake"
+            "cmake", "-B", build_path, "-S", ".", "-G", "Ninja", build_type, "--toolchain=cmake/toolchain.cmake"
         ]).check_returncode()
     subprocess.run([
-        "ninja", "-C", "build"
+        "ninja", "-C", build_path
     ]).check_returncode()
 
 if __name__ == "__main__":
     import sys
 
-    clean: bool = False
-    if len(sys.argv) > 1:
-        clean = sys.argv[1].lower() == "clean"
+    clean: bool = "--clean" in sys.argv
+    testing: bool = "--test" in sys.argv
 
     build_tools()
-    build_rtld(clean)
+    build_rtld(clean, testing)

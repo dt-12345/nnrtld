@@ -10,7 +10,8 @@ namespace nn::ro::detail {
 
 class RoModule {
 public:
-    using LogFunc = void (const char*);
+    using WarningFunc = void (const char*);
+    using ErrorFunc = __attribute__((__noreturn__)) void (const char*);
 
     RoModule() = default;
 
@@ -20,15 +21,15 @@ public:
 
     void Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* dyn, std::uint8_t flags, void (*error_callback)(std::uint32_t code));
 
-    void FixRelativeRelocations(LogFunc error_callback);
+    void FixRelativeRelocations(ErrorFunc error_callback);
     void Relocate(
         bool lazy,
         void (*jump_slot_resolver)(),
         uintptr_t (*lookup_auto)(const char*),
         uintptr_t (*lookup_manual)(const RoModule*, const char*),
         bool debug,
-        LogFunc warning_callback,
-        LogFunc error_callback
+        WarningFunc warning_callback,
+        ErrorFunc error_callback
     );
 
     uintptr_t BindJumpSlot(std::uint32_t);
@@ -60,8 +61,8 @@ public:
         }
     }
 
-    static void InitializeSelfError(std::uint32_t);
-    static void InitializeError(std::uint32_t);
+    [[noreturn]] static void InitializeSelfError(std::uint32_t);
+    [[noreturn]] static void InitializeError(std::uint32_t);
 
     [[nodiscard]] static constexpr size_t GetListNodeOffset() { return 0; }
 
@@ -77,9 +78,9 @@ private:
     void LogUnresolvedSymbol(const Elf64_Sym* sym) const;
     void RtldLogUnresolvedSymbol(const Elf64_Sym* sym) const;
 
-    void FixRelativeRel(const Elf64_Rel* rel, LogFunc error_callback);
-    void FixRelativeRela(const Elf64_Rela* rel, LogFunc error_callback);
-    void FixRelativeRelr(const Elf64_Dyn* dyn, LogFunc error_callback);
+    void FixRelativeRel(const Elf64_Rel* rel, ErrorFunc error_callback);
+    void FixRelativeRela(const Elf64_Rela* rel, ErrorFunc error_callback);
+    void FixRelativeRelr(const Elf64_Dyn* dyn, ErrorFunc error_callback);
     
     void RelocateRel(
         const Elf64_Rel* rel,
@@ -87,8 +88,8 @@ private:
         uintptr_t (*lookup_auto)(const char*),
         uintptr_t (*lookup_manual)(const RoModule*, const char*),
         bool debug,
-        LogFunc warning_callback,
-        LogFunc error_callback
+        WarningFunc warning_callback,
+        ErrorFunc error_callback
     );
     void RelocateRela(
         const Elf64_Rela* rel,
@@ -96,8 +97,8 @@ private:
         uintptr_t (*lookup_auto)(const char*),
         uintptr_t (*lookup_manual)(const RoModule*, const char*),
         bool debug,
-        LogFunc warning_callback,
-        LogFunc error_callback
+        WarningFunc warning_callback,
+        ErrorFunc error_callback
     );
     void RelocatePltRel(
         const Elf64_Rel* rel,
@@ -106,8 +107,8 @@ private:
         uintptr_t (*lookup_auto)(const char*),
         uintptr_t (*lookup_manual)(const RoModule*, const char*),
         bool debug,
-        LogFunc warning_callback,
-        LogFunc error_callback
+        WarningFunc warning_callback,
+        ErrorFunc error_callback
     );
     void RelocatePltRela(
         const Elf64_Rela* rel,
@@ -116,8 +117,8 @@ private:
         uintptr_t (*lookup_auto)(const char*),
         uintptr_t (*lookup_manual)(const RoModule*, const char*),
         bool debug,
-        LogFunc warning_callback,
-        LogFunc error_callback
+        WarningFunc warning_callback,
+        ErrorFunc error_callback
     );
 
     uintptr_t BindJumpSlotRel(std::uint32_t index);

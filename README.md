@@ -33,3 +33,5 @@ notes:
     - some seem to have `udf 0x8002` at the end as a trap as well
     - c++'s `[[noreturn]]` doesn't seem to support function pointers so we'll use `__attribute__((__noreturn__))`
   - `nn::ro::detail::ArchData` sdk version was updated to match
+  - `_init` calls a new function before `ProtectRelro` (it's a no-op though)
+    - though this may have just been optimized out bc the 20.x.x rtld binaries I'm looking at were compiled with PGO

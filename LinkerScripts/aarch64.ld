@@ -15,7 +15,6 @@ SECTIONS
   .text : {
     PROVIDE_HIDDEN(__EX_start = .);
     KEEP(*(.rocrt.init))
-    KEEP(*(.text.crt0))
     . = ALIGN(0x100);
     *(.text .text.*)
     PROVIDE_HIDDEN(__EX_end = .);

@@ -24,7 +24,8 @@ add_executable(${MODULE_NAME}
     Sources/ro/detail/detail_ModuleHeader.cpp
     Sources/ro/detail/detail_RoModule.cpp
     Sources/ro/detail/detail_Rocrt.cpp
-    Sources/ro/ro_Bind.S
+    Sources/ro/ro_Rocrt.aarch64.S
+    Sources/ro/ro_Rtld.S
     Sources/ro/ro_UserExceptionHandler.S
 
     Sources/rocrt/detail/detail_Musl.cpp
@@ -39,16 +40,12 @@ add_executable(${MODULE_NAME}
     Sources/util/util_Strlen.S    # TODO: is this actually implemented in asm
     Sources/util/util_memcpy_aarch64.S
     Sources/util/util_Strcmp.S    # TODO: is this actually implemented in asm
-
-    Sources/init/rocrt_Init.aarch64.S
-    Sources/init/rtld_Init.aarch64.S
 )
 
+# TODO: test with -falign-loops=16
 target_compile_options(${MODULE_NAME} PRIVATE
     -fno-rtti
     -fno-exceptions
-    -fno-asynchronous-unwind-tables
-    -fno-unwind-tables
     -ffunction-sections
     -fdata-sections
     -fvisibility=hidden

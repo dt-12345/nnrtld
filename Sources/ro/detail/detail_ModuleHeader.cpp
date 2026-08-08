@@ -8,7 +8,7 @@ bool FindModuleHeader(const rocrt::ModuleHeader** out_header, rocrt::ModuleVersi
     *out_header = nullptr;
     *out_version = {};
 
-    std::uint32_t page_info;
+    std::uint32_t page_info = 0;
     svc::MemoryInfo info{};
     if (QueryFunc(&info, &page_info, address)) {
         return false;

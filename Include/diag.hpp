@@ -5,11 +5,12 @@
 
 namespace nn::diag::detail {
 
-inline void Abort() {
+[[noreturn]] ALWAYS_INLINE void Abort() {
     svc::Break(0, 0, 0);
+    __builtin_unreachable();
 }
 
-inline void Puts(const char* msg) {
+ALWAYS_INLINE void Puts(const char* msg) {
     svc::OutputDebugString(msg, strlen(msg));
 }
 
