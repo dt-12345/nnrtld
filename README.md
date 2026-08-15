@@ -10,7 +10,7 @@ Currently **does not** generate a matching binary, however, it should be mostly 
 
 Inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there.
 
-Thank you to the (Open-EAD project)[https://github.com/open-ead] for much of the tooling.
+Thank you to the [Open-EAD project](https://github.com/open-ead) for much of the tooling.
 
 ## Project TODOs
 - Match all functions (currently at 28/41)
