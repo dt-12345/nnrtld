@@ -45,4 +45,7 @@ python3 Tools/setup.py --nso-path <path_to_rtld_binary>
 
 # to check
 Tools/check
+
+# to check a function
+Tools/check FunctionName -j EX
 ```
