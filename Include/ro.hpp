@@ -18,12 +18,12 @@ extern LookupGlobalManualFunc* g_LookupGlobalManualFunctionPointer;
 extern util::TypedStorage<RoModuleList> g_ManualLoadList;
 extern util::TypedStorage<RoModuleList> g_AutoLoadList;
 
-void InitializeSelfModule(uintptr_t aslr_base, Elf64_Dyn* dyn);
-void Initialize(uintptr_t aslr_base, Elf64_Dyn* dyn);
+void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn);
+void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn);
 
-using QueryMemoryFunction = std::uint32_t (svc::MemoryInfo* info, std::uint32_t* page_info, std::uint64_t addr);
+using QueryMemoryFunction = std::uint32_t (svc::MemoryInfo* pOutMemInfo, std::uint32_t* pOutPageInfo, std::uint64_t addr);
 template <QueryMemoryFunction QueryFunc>
-bool FindModuleHeader(const rocrt::ModuleHeader** out_header, rocrt::ModuleVersion* out_version, uintptr_t address);
+bool FindModuleHeader(const rocrt::ModuleHeader** pOutHeader, rocrt::ModuleVersion* pOutVersion, uintptr_t address);
 
 uintptr_t LookupGlobalAuto(const char* name);
 

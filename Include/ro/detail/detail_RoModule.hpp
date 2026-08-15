@@ -19,17 +19,17 @@ public:
         m_ListNode = {};
     }
 
-    void Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* dyn, std::uint8_t flags, void (*error_callback)(std::uint32_t code));
+    void Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std::uint8_t flags, void (*errorCallback)(std::uint32_t code));
 
-    void FixRelativeRelocations(ErrorFunc error_callback);
+    void FixRelativeRelocations(ErrorFunc errorCallback);
     void Relocate(
         bool lazy,
-        void (*jump_slot_resolver)(),
-        uintptr_t (*lookup_auto)(const char*),
-        uintptr_t (*lookup_manual)(const RoModule*, const char*),
+        void (*jumpSlotResolver)(),
+        uintptr_t (*lookupAuto)(const char*),
+        uintptr_t (*lookupManual)(const RoModule*, const char*),
         bool debug,
-        WarningFunc warning_callback,
-        ErrorFunc error_callback
+        WarningFunc warningCallback,
+        ErrorFunc errorCallback
     );
 
     uintptr_t BindJumpSlot(std::uint32_t);
@@ -68,57 +68,57 @@ public:
 
 private:
     bool TryResolveSymbol(
-        uintptr_t* target,
-        Elf64_Sym* sym,
-        bool* is_manual,
-        void (*jump_slot_resolver)(),
-        uintptr_t (*lookup_auto)(const char*),
-        uintptr_t (*lookup_manual)(const RoModule*, const char*)
+        uintptr_t* pOutTarget,
+        const Elf64_Sym* pSym,
+        bool* pOutManual,
+        void (*jumpSlotResolver)(),
+        uintptr_t (*lookupAuto)(const char*),
+        uintptr_t (*lookupManual)(const RoModule*, const char*)
     ) const;
     void LogUnresolvedSymbol(const Elf64_Sym* sym) const;
     void RtldLogUnresolvedSymbol(const Elf64_Sym* sym) const;
 
-    void FixRelativeRel(const Elf64_Rel* rel, ErrorFunc error_callback);
-    void FixRelativeRela(const Elf64_Rela* rel, ErrorFunc error_callback);
-    void FixRelativeRelr(const Elf64_Dyn* dyn, ErrorFunc error_callback);
+    void FixRelativeRel(const Elf64_Rel* pRel, ErrorFunc errorCallback);
+    void FixRelativeRela(const Elf64_Rela* pRel, ErrorFunc errorCallback);
+    void FixRelativeRelr(const Elf64_Dyn* pDyn, ErrorFunc errorCallback);
     
     void RelocateRel(
-        const Elf64_Rel* rel,
-        void (*jump_slot_resolver)(),
-        uintptr_t (*lookup_auto)(const char*),
-        uintptr_t (*lookup_manual)(const RoModule*, const char*),
+        const Elf64_Rel* pRel,
+        void (*jumpSlotResolver)(),
+        uintptr_t (*lookupAuto)(const char*),
+        uintptr_t (*lookupManual)(const RoModule*, const char*),
         bool debug,
-        WarningFunc warning_callback,
-        ErrorFunc error_callback
+        WarningFunc warningCallback,
+        ErrorFunc errorCallback
     );
     void RelocateRela(
-        const Elf64_Rela* rel,
-        void (*jump_slot_resolver)(),
-        uintptr_t (*lookup_auto)(const char*),
-        uintptr_t (*lookup_manual)(const RoModule*, const char*),
+        const Elf64_Rela* pRel,
+        void (*jumpSlotResolver)(),
+        uintptr_t (*lookupAuto)(const char*),
+        uintptr_t (*lookupManual)(const RoModule*, const char*),
         bool debug,
-        WarningFunc warning_callback,
-        ErrorFunc error_callback
+        WarningFunc warningCallback,
+        ErrorFunc errorCallback
     );
     void RelocatePltRel(
-        const Elf64_Rel* rel,
+        const Elf64_Rel* pRel,
         bool lazy,
-        void (*jump_slot_resolver)(),
-        uintptr_t (*lookup_auto)(const char*),
-        uintptr_t (*lookup_manual)(const RoModule*, const char*),
+        void (*jumpSlotResolver)(),
+        uintptr_t (*lookupAuto)(const char*),
+        uintptr_t (*lookupManual)(const RoModule*, const char*),
         bool debug,
-        WarningFunc warning_callback,
-        ErrorFunc error_callback
+        WarningFunc warningCallback,
+        ErrorFunc errorCallback
     );
     void RelocatePltRela(
         const Elf64_Rela* rel,
         bool lazy,
-        void (*jump_slot_resolver)(),
-        uintptr_t (*lookup_auto)(const char*),
-        uintptr_t (*lookup_manual)(const RoModule*, const char*),
+        void (*jumpSlotResolver)(),
+        uintptr_t (*lookupAuto)(const char*),
+        uintptr_t (*lookupManual)(const RoModule*, const char*),
         bool debug,
-        WarningFunc warning_callback,
-        ErrorFunc error_callback
+        WarningFunc warningCallback,
+        ErrorFunc errorCallback
     );
 
     uintptr_t BindJumpSlotRel(std::uint32_t index);

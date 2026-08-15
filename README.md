@@ -18,7 +18,6 @@ TODO:
 - match data sections (.bss is matching, the others need some work)
   - `-Wl,-z now` seems to add both a bind now entry and a flags entry to `.dynamic` but official rtld only has the flags entry
   - check which functions need `.eh_frame` entries
-- unified code style
 - check sdk for functions to align names as best as possible
   - it's possible some functions may look similar but have similar names because rtld has separate implementations
 - memset/strcmp/strlen probably aren't implemented in assembly

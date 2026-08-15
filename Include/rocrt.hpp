@@ -15,31 +15,31 @@ constexpr inline std::uint32_t AARCH64_ENTRYPOINT_BRANCH = 0x14000002;
 
 struct ModuleHeader {
     std::uint32_t signature;
-    std::uint32_t dynamic_offset;
-    std::uint32_t bss_start_offset;
-    std::uint32_t bss_end_offset;
-    std::uint32_t eh_frame_hdr_start_offset;
-    std::uint32_t eh_frame_hdr_end_offset;
-    std::uint32_t ro_module_offset;
-    std::uint32_t relro_start_offset;
-    std::uint32_t full_relro_end_offset;
-    std::uint32_t nx_debuglink_start_offset;
-    std::uint32_t nx_debuglink_end_offset;
-    std::uint32_t note_gnu_build_id_start_offset;
-    std::uint32_t note_gnu_build_id_end_offset;
+    std::int32_t  dynamicOffset;
+    std::int32_t  bssStartOffset;
+    std::int32_t  bssEndOffset;
+    std::int32_t  ehFrameHdrStartOffset;
+    std::int32_t  ehFrameHdrEndOffset;
+    std::int32_t  roMduleOffset;
+    std::int32_t  relroStartOffset;
+    std::int32_t  fullRelroEndOffset;
+    std::int32_t  nxDebuglinkStartOffset;
+    std::int32_t  nxDebuglinkEndOffset;
+    std::int32_t  noteGnuBuildIdStartOffset;
+    std::int32_t  noteGnuBuildIdEndOffset;
 };
 
 struct ModuleVersion {
-    std::uint32_t sdk_major;
-    std::uint32_t sdk_minor;
-    std::uint32_t sdk_patch;
-    std::uint32_t rocrt_version;
+    std::uint32_t sdkMajor;
+    std::uint32_t sdkMinor;
+    std::uint32_t sdkPatch;
+    std::uint32_t rocrtVersion;
 };
 
 struct RocrtInit {
-    std::uint32_t entry_instruction;
-    std::uint32_t rocrt_offset;
-    std::uint32_t rocrt_version_offset;
+    std::uint32_t entryInstruction;
+    std::int32_t  rocrtOffset;
+    std::int32_t  rocrtVersionOffset;
 };
 
 struct RocrtVersion {
@@ -49,8 +49,8 @@ struct RocrtVersion {
 };
 
 inline bool HasStoredSdkVersion(const rocrt::RocrtInit* init) {
-    const auto entry_instr = init->entry_instruction;
-    return entry_instr == rocrt::ARM_ENTRYPOINT_BRANCH || entry_instr == 0 || entry_instr == rocrt::AARCH64_ENTRYPOINT_BRANCH;
+    const auto instr = init->entryInstruction;
+    return instr == rocrt::ARM_ENTRYPOINT_BRANCH || instr == 0 || instr == rocrt::AARCH64_ENTRYPOINT_BRANCH;
 }
 
 } // namespace nn::rocrt

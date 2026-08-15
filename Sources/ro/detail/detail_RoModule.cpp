@@ -9,63 +9,63 @@ extern util::TypedStorage<ro::detail::RoModule> g_RoModule;
 
 namespace ro::detail {
 
-void RoModule::FixRelativeRel(const Elf64_Rel* /* rel */, ErrorFunc error_callback) {
-    error_callback("RoModule::FixRelativeRel is called");
+void RoModule::FixRelativeRel(const Elf64_Rel* /* pRel */, ErrorFunc errorCallback) {
+    errorCallback("RoModule::FixRelativeRel is called");
 }
 
-void RoModule::FixRelativeRela(const Elf64_Rela* rel, ErrorFunc /* error_callback */) {
-    if (ELF64_R_TYPE(rel->r_info) == R_AARCH64_RELATIVE) {
-        *reinterpret_cast<uintptr_t*>(m_Base + rel->r_offset) = m_Base + rel->r_addend;
+void RoModule::FixRelativeRela(const Elf64_Rela* pRel, ErrorFunc /* errorCallback */) {
+    if (ELF64_R_TYPE(pRel->r_info) == R_AARCH64_RELATIVE) {
+        *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = m_Base + pRel->r_addend;
     }
 }
 
-void RoModule::FixRelativeRelr(const Elf64_Dyn* dyn, ErrorFunc /* error_callback */) {
-    const Elf64_Relr* relr = nullptr;
-    Elf64_Xword relr_size = 0;
+void RoModule::FixRelativeRelr(const Elf64_Dyn* pDyn, ErrorFunc /* errorCallback */) {
+    const Elf64_Relr* pRelr = nullptr;
+    Elf64_Xword relrSize = 0;
 
-    for (; dyn->d_tag != DT_NULL; ++dyn) {
-        switch (dyn->d_tag) {
+    for (; pDyn->d_tag != DT_NULL; ++pDyn) {
+        switch (pDyn->d_tag) {
             case DT_RELRSZ:
-                relr_size = dyn->d_un.d_val;
+                relrSize = pDyn->d_un.d_val;
                 break;
             case DT_RELR:
-                relr = reinterpret_cast<const Elf64_Relr*>(m_Base + dyn->d_un.d_ptr);
+                pRelr = reinterpret_cast<const Elf64_Relr*>(m_Base + pDyn->d_un.d_ptr);
                 break;
             default:
                 break;
         }
     }
 
-    if (relr != nullptr && relr_size >= sizeof(Elf64_Relr)) {
-        uintptr_t* target = nullptr;
-        for (size_t i = 0; i < relr_size / sizeof(Elf64_Relr); ++i) {
-            auto value = relr[i];
+    if (pRelr != nullptr && relrSize >= sizeof(Elf64_Relr)) {
+        uintptr_t* pTarget = nullptr;
+        for (size_t i = 0; i < relrSize / sizeof(Elf64_Relr); ++i) {
+            auto value = pRelr[i];
             if ((value & 1) == 0) {
-                target = reinterpret_cast<uintptr_t*>(m_Base + value);
-                *target++ += m_Base;
+                pTarget = reinterpret_cast<uintptr_t*>(m_Base + value);
+                *pTarget++ += m_Base;
             } else {
                 for (size_t j = 0; (value >>= 1) != 0; ++j) {
                     if (value & 1) {
-                        target[j] += m_Base;
+                        pTarget[j] += m_Base;
                     }
                 }
-                target += sizeof(void*) * 8 - 1;
+                pTarget += sizeof(void*) * 8 - 1;
             }
         }
     }
 }
 
-void RoModule::FixRelativeRelocations(ErrorFunc error_callback) {
+void RoModule::FixRelativeRelocations(ErrorFunc errorCallback) {
     // fix relocations found in this module
     for (size_t i = 0; i < m_ArchData.relEntryCount; ++i) {
-        FixRelativeRel(m_Rel + i, error_callback);
+        FixRelativeRel(m_Rel + i, errorCallback);
     }
 
     for (size_t i = 0; i < m_ArchData.relaEntryCount; ++i) {
-        FixRelativeRela(m_Rela + i, error_callback);
+        FixRelativeRela(m_Rela + i, errorCallback);
     }
 
-    FixRelativeRelr(m_ArchData.dyn, error_callback);
+    FixRelativeRelr(m_ArchData.dyn, errorCallback);
 }
 
 void Unexpected(const char* msg) {
@@ -102,35 +102,35 @@ static Elf64_Word CalcGnuHash(const char* name) {
 Elf64_Sym* RoModule::LookupSymbol(const char* name) const {
     if ((m_ArchData.flags & ArchData::Flags_GnuHash) == 0) {
         for (Elf64_Word bucket = m_ArchData.bucket[CalcElfHash(name) % m_ArchData.nbucket]; bucket != 0; bucket = m_ArchData.chain[bucket]) {
-            auto sym = m_ArchData.symTable + bucket;
-            if (ELF64_ST_TYPE(sym->st_info) != STT_FILE
-                && sym->st_shndx != SHN_UNDEF
-                && sym->st_shndx != SHN_COMMON
-                && strcmp(name, m_ArchData.strTable + sym->st_name) == 0
+            auto pSym = m_ArchData.symTable + bucket;
+            if (ELF64_ST_TYPE(pSym->st_info) != STT_FILE
+                && pSym->st_shndx != SHN_UNDEF
+                && pSym->st_shndx != SHN_COMMON
+                && strcmp(name, m_ArchData.strTable + pSym->st_name) == 0
             ) {
-                return sym;
+                return pSym;
             }
         }
     } else {
         constexpr const Elf64_Word BITS = sizeof(Elf64_Xword) * 8;
         const Elf64_Word hash = CalcGnuHash(name);
-        const Elf64_Xword bloom_value = m_ArchData.bloom[(m_ArchData.bloomSize - 1) & (hash / BITS)];
-        const Elf64_Xword bloom_mask = 1ull << static_cast<Elf64_Xword>((hash >> m_ArchData.bloomShift) % BITS) | 1ull << static_cast<Elf64_Xword>(hash % BITS);
+        const Elf64_Xword bloomValue = m_ArchData.bloom[(m_ArchData.bloomSize - 1) & (hash / BITS)];
+        const Elf64_Xword bloomMask = 1ull << static_cast<Elf64_Xword>((hash >> m_ArchData.bloomShift) % BITS) | 1ull << static_cast<Elf64_Xword>(hash % BITS);
 
-        if ((bloom_mask & bloom_value) == bloom_mask) {
+        if ((bloomMask & bloomValue) == bloomMask) {
             const auto nbuckets = m_ArchData.hashTable[0];
-            const auto sym_offset = m_ArchData.hashTable[1];
+            const auto symBase = m_ArchData.hashTable[1];
             const auto buckets = reinterpret_cast<const Elf64_Word*>(m_ArchData.bloom + m_ArchData.bloomSize);
             const auto syms = buckets + nbuckets;
 
-            auto sym_index = buckets[hash % nbuckets];
+            auto symIndex = buckets[hash % nbuckets];
 
-            if (sym_index >= sym_offset) {
+            if (symIndex >= symBase) {
                 while (true) {
-                    const auto hash_value = syms[sym_index - sym_offset];
+                    const auto hash_value = syms[symIndex - symBase];
                     if ((hash | 1) == (hash_value | 1)) {
-                        if (strcmp(name, m_ArchData.strTable + m_ArchData.symTable[sym_index].st_name) == 0) {
-                            return m_ArchData.symTable + sym_index;
+                        if (strcmp(name, m_ArchData.strTable + m_ArchData.symTable[symIndex].st_name) == 0) {
+                            return m_ArchData.symTable + symIndex;
                         }
                     }
 
@@ -138,7 +138,7 @@ Elf64_Sym* RoModule::LookupSymbol(const char* name) const {
                         break;
                     }
 
-                    ++sym_index;
+                    ++symIndex;
                 }
             }
         }
@@ -149,12 +149,12 @@ Elf64_Sym* RoModule::LookupSymbol(const char* name) const {
 
 uintptr_t LookupGlobalAuto(const char* name) {
     for (const auto& module : util::GetReference(g_AutoLoadList)) {
-        if (auto sym = module.LookupSymbol(name)) {
-            switch (ELF64_ST_BIND(sym->st_info)) {
+        if (auto pSym = module.LookupSymbol(name)) {
+            switch (ELF64_ST_BIND(pSym->st_info)) {
                 case STB_LOCAL:
                     break;
                 default:
-                    return module.GetBase() + sym->st_value;
+                    return module.GetBase() + pSym->st_value;
             }
         }
     }
@@ -197,168 +197,168 @@ StartCallback* GetFinalizeModules() {
 }
 
 bool RoModule::TryResolveSymbol(
-    uintptr_t* target,
-    Elf64_Sym* sym,
-    bool* is_manual,
-    void (* /* jump_slot_resolver */)(),
-    uintptr_t (*lookup_auto)(const char*),
-    uintptr_t (*lookup_manual)(const RoModule*, const char*)
+    uintptr_t* pOutTarget,
+    const Elf64_Sym* pSym,
+    bool* pOutManual,
+    void (* /* jumpSlotResolver */)(),
+    uintptr_t (*lookupAuto)(const char*),
+    uintptr_t (*lookupManual)(const RoModule*, const char*)
 ) const {
-    const char* name = m_ArchData.strTable + sym->st_name;
+    const char* name = m_ArchData.strTable + pSym->st_name;
 
-    uintptr_t target_addr = 0;
-    if (ELF64_ST_VISIBILITY(sym->st_other) == STV_DEFAULT) {
-        target_addr = lookup_auto(name);
-        if (lookup_manual != nullptr && target_addr == 0) {
-            target_addr = lookup_manual(this, name);
-            if (is_manual) {
-                *is_manual = true;
+    uintptr_t targetAddr = 0;
+    if (ELF64_ST_VISIBILITY(pSym->st_other) == STV_DEFAULT) {
+        targetAddr = lookupAuto(name);
+        if (lookupManual != nullptr && targetAddr == 0) {
+            targetAddr = lookupManual(this, name);
+            if (pOutManual) {
+                *pOutManual = true;
             }
         } else {
-            if (is_manual) {
-                *is_manual = false;
+            if (pOutManual) {
+                *pOutManual = false;
             }
         }
     } else {
-        if (is_manual) {
-            *is_manual = false;
+        if (pOutManual) {
+            *pOutManual = false;
         }
 
-        if (auto resolved_sym = LookupSymbol(name)) {
-            target_addr = m_Base + resolved_sym->st_value;
+        if (auto pResolved = LookupSymbol(name)) {
+            targetAddr = m_Base + pResolved->st_value;
         }
     }
 
-    *target = target_addr;
-    return target_addr != 0 || ELF64_ST_BIND(sym->st_info) == STB_WEAK;
+    *pOutTarget = targetAddr;
+    return targetAddr != 0 || ELF64_ST_BIND(pSym->st_info) == STB_WEAK;
 }
 
 void RoModule::RelocateRel(
-    const Elf64_Rel* /* rel */,
-    void (* /* jump_slot_resolver */)(),
-    uintptr_t (* /* lookup_auto */)(const char*),
-    uintptr_t (* /* lookup_manual */)(const RoModule*, const char*),
+    const Elf64_Rel* /* pRel */,
+    void (* /* jumpSlotResolver */)(),
+    uintptr_t (* /* lookupAuto */)(const char*),
+    uintptr_t (* /* lookupManual */)(const RoModule*, const char*),
     bool /* debug */,
-    WarningFunc /* warning_callback */,
-    ErrorFunc error_callback
+    WarningFunc /* warningCallback */,
+    ErrorFunc errorCallback
 ) {
-    error_callback("RoModule::RelocateRel is called");
+    errorCallback("RoModule::RelocateRel is called");
 }
 
 void RoModule::RelocateRela(
-    const Elf64_Rela* rel,
-    void (*jump_slot_resolver)(),
-    uintptr_t (*lookup_auto)(const char*),
-    uintptr_t (*lookup_manual)(const RoModule*, const char*),
+    const Elf64_Rela* pRel,
+    void (*jumpSlotResolver)(),
+    uintptr_t (*lookupAuto)(const char*),
+    uintptr_t (*lookupManual)(const RoModule*, const char*),
     bool debug,
-    WarningFunc warning_callback,
-    ErrorFunc error_callback
+    WarningFunc warningCallback,
+    ErrorFunc errorCallback
 ) {
-    switch (ELF64_R_TYPE(rel->r_info)) {
+    switch (ELF64_R_TYPE(pRel->r_info)) {
         case R_AARCH64_ABS16:
         case R_AARCH64_ABS32:
         case R_AARCH64_ABS64:
         case R_AARCH64_GLOB_DAT: {
-            auto sym = m_ArchData.symTable + ELF64_R_SYM(rel->r_info);
-            uintptr_t target_addr = 0;
+            auto pSym = m_ArchData.symTable + ELF64_R_SYM(pRel->r_info);
+            uintptr_t targetAddr = 0;
             bool manual = false;
-            if (TryResolveSymbol(&target_addr, sym, &manual, jump_slot_resolver, lookup_auto, lookup_manual)) {
-                *reinterpret_cast<uintptr_t*>(m_Base + rel->r_offset) = target_addr + rel->r_addend;
+            if (TryResolveSymbol(&targetAddr, pSym, &manual, jumpSlotResolver, lookupAuto, lookupManual)) {
+                *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = targetAddr + pRel->r_addend;
 
-                if (target_addr == 0 || (manual && (target_addr < m_Base || target_addr >= m_Base + m_ArchData.moduleSize))) {
+                if (targetAddr == 0 || (manual && (targetAddr < m_Base || targetAddr >= m_Base + m_ArchData.moduleSize))) {
                     m_ArchData.flags |= ArchData::Flags_HasUnresolved;
                 }
             } else {
                 m_ArchData.flags |= ArchData::Flags_HasUnresolved;
                 if (debug) {
-                    warning_callback("[ro] warning: unresolved symbol = '");
-                    warning_callback(m_ArchData.strTable + sym->st_name);
-                    warning_callback("'\n");
+                    warningCallback("[ro] warning: unresolved symbol = '");
+                    warningCallback(m_ArchData.strTable + pSym->st_name);
+                    warningCallback("'\n");
                 }
                 return;
             }
             break;
         }
         case R_AARCH64_COPY:
-            error_callback("R_COPY is not supported");
+            errorCallback("R_COPY is not supported");
             break;
     }
 }
 
 void RoModule::RelocatePltRel(
-    const Elf64_Rel* /* rel */,
+    const Elf64_Rel* /* pRel */,
     bool /* lazy */,
-    void (* /* jump_slot_resolver */)(),
-    uintptr_t (* /* lookup_auto */)(const char*),
-    uintptr_t (* /* lookup_manual */)(const RoModule*, const char*),
+    void (* /* jumpSlotResolver */)(),
+    uintptr_t (* /* lookupAuto */)(const char*),
+    uintptr_t (* /* lookupManual */)(const RoModule*, const char*),
     bool /* debug */,
-    WarningFunc /* warning_callback */,
-    ErrorFunc error_callback
+    WarningFunc /* warningCallback */,
+    ErrorFunc errorCallback
 ) {
-    error_callback("RoModule::RelocatePltRel is called");
+    errorCallback("RoModule::RelocatePltRel is called");
 }
 
 void RoModule::RelocatePltRela(
-    const Elf64_Rela* rel,
+    const Elf64_Rela* pRel,
     bool lazy,
-    void (*jump_slot_resolver)(),
-    uintptr_t (*lookup_auto)(const char*),
-    uintptr_t (*lookup_manual)(const RoModule*, const char*),
+    void (*jumpSlotResolver)(),
+    uintptr_t (*lookupAuto)(const char*),
+    uintptr_t (*lookupManual)(const RoModule*, const char*),
     bool debug,
-    WarningFunc warning_callback,
-    ErrorFunc error_callback
+    WarningFunc warningCallback,
+    ErrorFunc errorCallback
 ) {
-    if (ELF64_R_TYPE(rel->r_info) != R_AARCH64_JUMP_SLOT) {
+    if (ELF64_R_TYPE(pRel->r_info) != R_AARCH64_JUMP_SLOT) {
         return;
     }
     
-    uintptr_t* pTarget = reinterpret_cast<uintptr_t*>(m_Base + rel->r_offset);
+    uintptr_t* pTarget = reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset);
     if (m_ArchData.defaultPltGot == 0) {
         m_ArchData.defaultPltGot = *pTarget + m_Base;
     } else if (m_ArchData.defaultPltGot != *pTarget + m_Base) {
-        error_callback("m_ArchData.defaultPltGot != *pTarget + m_Base");
+        errorCallback("m_ArchData.defaultPltGot != *pTarget + m_Base");
     }
 
     if (lazy) {
         *pTarget += m_Base;
     } else {
-        auto sym = m_ArchData.symTable + ELF64_R_SYM(rel->r_info);
-        uintptr_t sym_addr = 0;
-        if (TryResolveSymbol(&sym_addr, sym, nullptr, jump_slot_resolver, lookup_auto, lookup_manual)) {
-            *pTarget = sym_addr + rel->r_addend;
+        auto pSym = m_ArchData.symTable + ELF64_R_SYM(pRel->r_info);
+        uintptr_t symAddr = 0;
+        if (TryResolveSymbol(&symAddr, pSym, nullptr, jumpSlotResolver, lookupAuto, lookupManual)) {
+            *pTarget = symAddr + pRel->r_addend;
         } else if (debug) {
-            warning_callback("[ro] warning: unresolved symbol = '");
-            warning_callback(m_ArchData.strTable + sym->st_name);
-            warning_callback("'\n");
+            warningCallback("[ro] warning: unresolved symbol = '");
+            warningCallback(m_ArchData.strTable + pSym->st_name);
+            warningCallback("'\n");
         }
     }
 }
 
 void RoModule::Relocate(
     bool lazy,
-    void (*jump_slot_resolver)(),
-    uintptr_t (*lookup_auto)(const char*),
-    uintptr_t (*lookup_manual)(const RoModule*, const char*),
+    void (*jumpSlotResolver)(),
+    uintptr_t (*lookupAuto)(const char*),
+    uintptr_t (*lookupManual)(const RoModule*, const char*),
     bool debug,
-    WarningFunc warning_callback,
-    ErrorFunc error_callback
+    WarningFunc warningCallback,
+    ErrorFunc errorCallback
 ) {
     // fix relocations for imported symbols
     for (size_t i = m_ArchData.relEntryCount; i < m_ArchData.relSize / sizeof(Elf64_Rel); ++i) {
-        RelocateRel(m_Rel + i, jump_slot_resolver, lookup_auto, lookup_manual, debug, warning_callback, error_callback);
+        RelocateRel(m_Rel + i, jumpSlotResolver, lookupAuto, lookupManual, debug, warningCallback, errorCallback);
     }
 
     for (size_t i = m_ArchData.relaEntryCount; i < m_ArchData.relaSize / sizeof(Elf64_Rela); ++i) {
-        RelocateRela(m_Rela + i, jump_slot_resolver, lookup_auto, lookup_manual, debug, warning_callback, error_callback);
+        RelocateRela(m_Rela + i, jumpSlotResolver, lookupAuto, lookupManual, debug, warningCallback, errorCallback);
     }
 
     if ((m_ArchData.flags & ArchData::Flags_PltRela) == 0) {
         for (size_t i = 0; i < m_ArchData.pltRelocSize / sizeof(Elf64_Rel); ++i) {
-            RelocatePltRel(m_RelPlt + i, lazy, jump_slot_resolver, lookup_auto, lookup_manual, debug, warning_callback, error_callback);
+            RelocatePltRel(m_RelPlt + i, lazy, jumpSlotResolver, lookupAuto, lookupManual, debug, warningCallback, errorCallback);
         }
     } else {
         for (size_t i = 0; i < m_ArchData.pltRelocSize / sizeof(Elf64_Rela); ++i) {
-            RelocatePltRela(m_RelaPlt + i, lazy, jump_slot_resolver, lookup_auto, lookup_manual, debug, warning_callback, error_callback);
+            RelocatePltRela(m_RelaPlt + i, lazy, jumpSlotResolver, lookupAuto, lookupManual, debug, warningCallback, errorCallback);
         }
     }
 
@@ -374,18 +374,18 @@ uintptr_t RoModule::BindJumpSlotRel(std::uint32_t /* index */) {
 }
 
 uintptr_t RoModule::BindJumpSlotRela(std::uint32_t index) {
-    const auto rel = m_RelaPlt + index;
-    const auto sym = m_ArchData.symTable + ELF64_R_SYM(rel->r_info);
+    const auto pRel = m_RelaPlt + index;
+    const auto pSym = m_ArchData.symTable + ELF64_R_SYM(pRel->r_info);
 
-    uintptr_t target_addr;
-    if (!TryResolveSymbol(&target_addr, sym, nullptr, BindEntry, LookupGlobalAuto, g_LookupGlobalManualFunctionPointer)) {
+    uintptr_t targetAddr;
+    if (!TryResolveSymbol(&targetAddr, pSym, nullptr, BindEntry, LookupGlobalAuto, g_LookupGlobalManualFunctionPointer)) {
         diag::detail::Puts("[rtld] warning: unresolved symbol = '");
-        diag::detail::Puts(m_ArchData.strTable + sym->st_name);
+        diag::detail::Puts(m_ArchData.strTable + pSym->st_name);
         diag::detail::Puts("'\n");
     }
 
-    const auto address = target_addr + rel->r_addend;
-    *reinterpret_cast<uintptr_t*>(m_Base + rel->r_offset) = address;
+    const auto address = targetAddr + pRel->r_addend;
+    *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = address;
     return address;
 }
 
