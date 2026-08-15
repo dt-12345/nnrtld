@@ -14,12 +14,11 @@ function names and TU splits are mostly just guesses - some are based on the `ro
 compiler is clang 14.0.x, but if matching isn't a concern, it should build with any clang version that supports c++20
 
 TODO:
-- match functions
+- match functions (currently, only the trivial functions are matching)
 - match data sections (.bss is matching, the others need some work)
   - `-Wl,-z now` seems to add both a bind now entry and a flags entry to `.dynamic` but official rtld only has the flags entry
   - check which functions need `.eh_frame` entries
 - unified code style
-- build instructions + tools for checking matches/progress
 - check sdk for functions to align names as best as possible
   - it's possible some functions may look similar but have similar names because rtld has separate implementations
 - memset/strcmp/strlen probably aren't implemented in assembly
@@ -37,3 +36,13 @@ notes:
   - `nn::ro::detail::ArchData` sdk version was updated to match
   - `_init` calls a new function before `ProtectRelro` (it's a no-op though)
     - though this may have just been optimized out bc the 20.x.x rtld binaries I'm looking at were compiled with PGO
+
+basic build instructions (requires CMake, Ninja, Python 3, Rust, RTLD NSO)
+- RTLD binary should be from SDK 21.4.0
+- the free demo for Rhythm Heaven Groove should work
+```
+python3 Tools/setup.py --nso-path <path_to_rtld_binary>
+
+# to check
+Tools/check
+```
