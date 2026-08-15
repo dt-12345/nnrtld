@@ -6,4 +6,4 @@
 	url = https://github.com/dt-12345/nso-tools.git
 [submodule "Tools/common"]
 	path = Tools/common
-	url = https://github.com/open-ead/nx-decomp-tools.git
+	url = https://github.com/dt-12345/nx-decomp-tools.git
