@@ -22,9 +22,7 @@ SECTIONS
 
   . = ALIGN(0x1000);
 
-  .rocrt.initro : {
-    KEEP(*(.rocrt.initro))
-  } :rodata
+  .rocrt.initro : { KEEP(*(.rocrt.initro)) } :rodata
 
   .nx_debuglink : {
     PROVIDE_HIDDEN(__nx_debuglink_start = .);
@@ -32,9 +30,7 @@ SECTIONS
     PROVIDE_HIDDEN(__nx_debuglink_end = .);
   } :rodata
 
-  .rocrt.info : {
-    KEEP(*(.rocrt.info))
-  } :rodata
+  .rocrt.info : { KEEP(*(.rocrt.info)) } :rodata
 
   PROVIDE_HIDDEN(__rel_dyn_start = .);
   .rel.dyn : { *(.rel.dyn) } :rodata
