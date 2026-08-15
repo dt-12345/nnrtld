@@ -150,7 +150,7 @@ def setup_rtld_elf(rtld_path: str, override: bool) -> None:
         raise
 
 def build_rtld(clean: bool, for_check: bool, compiler_version: str) -> None:
-    build_path: Path = setup.ROOT / "build_check" if for_check else "build"
+    build_path: Path = setup.ROOT / ("build_check" if for_check else "build")
     build_type: str = "-DCMAKE_BUILD_TYPE=RelWithDebInfo" if for_check else "-DCMAKE_BUILD_TYPE=Release"
     if clean and build_path.is_dir():
         shutil.rmtree(build_path)
