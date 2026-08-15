@@ -44,6 +44,7 @@ python3 Tools/setup.py
 
 For decompilation, the following are also required:
 - Clang 16.0.0 (installed by `setup.py`)
+  - Note that the prebuilt binary requires ncurses 5
 - llvm-objdump
 - Rust
 - Python 3
