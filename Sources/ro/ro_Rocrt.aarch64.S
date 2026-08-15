@@ -122,6 +122,7 @@ __rtld_return_from_exception:
     b .     // unreachable infinite loop
 
     .cfi_endproc
+    SIZE(__rocrt_init)
 
     .section ".rocrt.initro", "a"
     .align  2

@@ -1,3 +1,5 @@
+#include "Config/module.h"
+
 .macro SVC_BEGIN name
 	.section ".text", "ax", %progbits
 	.global \name
@@ -10,6 +12,7 @@
 
 .macro SVC_END name
 	.cfi_endproc
+	SIZE(\name)
 .endm
 
 SVC_BEGIN _ZN2nn3svc7aarch644lp6419SetMemoryPermissionEPKvmj

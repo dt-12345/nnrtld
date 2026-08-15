@@ -1,0 +1,4 @@
+build_target = "nnrtld.nss"
+build_dir = "build_check"
+functions_csv = "data/rtld.csv"
+original_elf = "rtld.nss"

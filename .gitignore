@@ -1,5 +1,11 @@
 build*/*
 .cache/*
-data/*
+.vscode/*
+data/rtld.nss
 
+Toolchain/clang*
 Tools/elf2nso
+Tools/nso2elf
+Tools/check
+Tools/decompme
+Tools/listsym

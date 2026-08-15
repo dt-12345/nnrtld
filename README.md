@@ -1,6 +1,7 @@
 # nnrtld
 
 shitty rtld decompilation (well, reimplementation currently bc decompilation is hard)
+- end goal is a byte-matching binary ...hopefully
 
 currently based on the rtld binary shipped with SDK version 21.4.0 (the build id seems to vary by game/version, but everything else is identical - I haven't checked how lld generates the build id, but it likely includes parts of the ELF that aren't included in the NSO)
 
@@ -21,6 +22,7 @@ TODO:
 - build instructions + tools for checking matches/progress
 - check sdk for functions to align names as best as possible
   - it's possible some functions may look similar but have similar names because rtld has separate implementations
+- memset/strcmp/strlen probably aren't implemented in assembly
 
 inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there
 

@@ -1,2 +1,8 @@
 #define MODULE_NAME_LENGTH @MODULE_NAME_LENGTH@
 #define MODULE_NAME "@MODULE_NAME@"
+
+#if defined(FOR_CHECK)
+    #define SIZE(NAME) .size NAME, . - NAME
+#else
+    #define SIZE(NAME)
+#endif

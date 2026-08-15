@@ -13,6 +13,8 @@
  *
  */
 
+#include "Config/module.h"
+
 #define dstin	x0
 #define src	x1
 #define count	x2
@@ -64,13 +66,13 @@ __memcpy_aarch64:
 	add	srcend, src, count
 	add	dstend, dstin, count
 	cmp	count, 128
-	b.hi	copy_long
+	b.hi	.Lcopy_long
 	cmp	count, 32
-	b.hi	copy32_128
+	b.hi	.Lcopy32_128
 
 	/* Small copies: 0..32 bytes.  */
 	cmp	count, 16
-	b.lo	copy16
+	b.lo	.Lcopy16
 	ldp	A_l, A_h, [src]
 	ldp	D_l, D_h, [srcend, -16]
 	stp	A_l, A_h, [dstin]
@@ -78,8 +80,8 @@ __memcpy_aarch64:
 	ret
 
 	/* Copy 8-15 bytes.  */
-copy16:
-	tbz	count, 3, copy8
+.Lcopy16:
+	tbz	count, 3, .Lcopy8
 	ldr	A_l, [src]
 	ldr	A_h, [srcend, -8]
 	str	A_l, [dstin]
@@ -88,8 +90,8 @@ copy16:
 
 	.p2align 3
 	/* Copy 4-7 bytes.  */
-copy8:
-	tbz	count, 2, copy4
+.Lcopy8:
+	tbz	count, 2, .Lcopy4
 	ldr	A_lw, [src]
 	ldr	B_lw, [srcend, -4]
 	str	A_lw, [dstin]
@@ -97,8 +99,8 @@ copy8:
 	ret
 
 	/* Copy 0..3 bytes using a branchless sequence.  */
-copy4:
-	cbz	count, copy0
+.Lcopy4:
+	cbz	count, .Lcopy0
 	lsr	tmp1, count, 1
 	ldrb	A_lw, [src]
 	ldrb	C_lw, [srcend, -1]
@@ -106,18 +108,18 @@ copy4:
 	strb	A_lw, [dstin]
 	strb	B_lw, [dstin, tmp1]
 	strb	C_lw, [dstend, -1]
-copy0:
+.Lcopy0:
 	ret
 
 	.p2align 4
 	/* Medium copies: 33..128 bytes.  */
-copy32_128:
+.Lcopy32_128:
 	ldp	A_l, A_h, [src]
 	ldp	B_l, B_h, [src, 16]
 	ldp	C_l, C_h, [srcend, -32]
 	ldp	D_l, D_h, [srcend, -16]
 	cmp	count, 64
-	b.hi	copy128
+	b.hi	.Lcopy128
 	stp	A_l, A_h, [dstin]
 	stp	B_l, B_h, [dstin, 16]
 	stp	C_l, C_h, [dstend, -32]
@@ -126,16 +128,16 @@ copy32_128:
 
 	.p2align 4
 	/* Copy 65..128 bytes.  */
-copy128:
+.Lcopy128:
 	ldp	E_l, E_h, [src, 32]
 	ldp	F_l, F_h, [src, 48]
 	cmp	count, 96
-	b.ls	copy96
+	b.ls	.Lcopy96
 	ldp	G_l, G_h, [srcend, -64]
 	ldp	H_l, H_h, [srcend, -48]
 	stp	G_l, G_h, [dstend, -64]
 	stp	H_l, H_h, [dstend, -48]
-copy96:
+.Lcopy96:
 	stp	A_l, A_h, [dstin]
 	stp	B_l, B_h, [dstin, 16]
 	stp	E_l, E_h, [dstin, 32]
@@ -146,12 +148,12 @@ copy96:
 
 	.p2align 4
 	/* Copy more than 128 bytes.  */
-copy_long:
+.Lcopy_long:
 	/* Use backwards copy if there is an overlap.  */
 	sub	tmp1, dstin, src
-	cbz	tmp1, copy0
+	cbz	tmp1, .Lcopy0
 	cmp	tmp1, count
-	b.lo	copy_long_backwards
+	b.lo	.Lcopy_long_backwards
 
 	/* Copy 16 bytes and then align dst to 16-byte alignment.  */
 
@@ -166,9 +168,9 @@ copy_long:
 	ldp	C_l, C_h, [src, 48]
 	ldp	D_l, D_h, [src, 64]!
 	subs	count, count, 128 + 16	/* Test and readjust count.  */
-	b.ls	copy64_from_end
+	b.ls	.Lcopy64_from_end
 
-loop64:
+.Lloop64:
 	stp	A_l, A_h, [dst, 16]
 	ldp	A_l, A_h, [src, 16]
 	stp	B_l, B_h, [dst, 32]
@@ -178,10 +180,10 @@ loop64:
 	stp	D_l, D_h, [dst, 64]!
 	ldp	D_l, D_h, [src, 64]!
 	subs	count, count, 64
-	b.hi	loop64
+	b.hi	.Lloop64
 
 	/* Write the last iteration and copy 64 bytes from the end.  */
-copy64_from_end:
+.Lcopy64_from_end:
 	ldp	E_l, E_h, [srcend, -64]
 	stp	A_l, A_h, [dst, 16]
 	ldp	A_l, A_h, [srcend, -48]
@@ -200,7 +202,7 @@ copy64_from_end:
 
 	/* Large backwards copy for overlapping copies.
 	   Copy 16 bytes and then align dst to 16-byte alignment.  */
-copy_long_backwards:
+.Lcopy_long_backwards:
 	ldp	D_l, D_h, [srcend, -16]
 	and	tmp1, dstend, 15
 	sub	srcend, srcend, tmp1
@@ -212,9 +214,9 @@ copy_long_backwards:
 	ldp	D_l, D_h, [srcend, -64]!
 	sub	dstend, dstend, tmp1
 	subs	count, count, 128
-	b.ls	copy64_from_start
+	b.ls	.Lcopy64_from_start
 
-loop64_backwards:
+.Lloop64_backwards:
 	stp	A_l, A_h, [dstend, -16]
 	ldp	A_l, A_h, [srcend, -16]
 	stp	B_l, B_h, [dstend, -32]
@@ -224,10 +226,10 @@ loop64_backwards:
 	stp	D_l, D_h, [dstend, -64]!
 	ldp	D_l, D_h, [srcend, -64]!
 	subs	count, count, 64
-	b.hi	loop64_backwards
+	b.hi	.Lloop64_backwards
 
 	/* Write the last iteration and copy 64 bytes from the start.  */
-copy64_from_start:
+.Lcopy64_from_start:
 	ldp	G_l, G_h, [src, 48]
 	stp	A_l, A_h, [dstend, -16]
 	ldp	A_l, A_h, [src, 32]
@@ -244,4 +246,5 @@ copy64_from_start:
 
 .cfi_endproc
 
+SIZE(__memcpy_aarch64)
 .align 6, 0 // feels kinda hacky

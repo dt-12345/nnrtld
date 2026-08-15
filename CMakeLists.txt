@@ -14,6 +14,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_compile_options(-fcolor-diagnostics)
 endif()
 
+option(FOR_CHECK "Build for Tools/check" OFF)
+
 set(MODULE_NAME nnrtld)
 string(LENGTH ${MODULE_NAME} MODULE_NAME_LENGTH)
 
@@ -42,6 +44,11 @@ add_executable(${MODULE_NAME}
     Sources/util/util_Strcmp.S    # TODO: is this actually implemented in asm
 )
 
+if (FOR_CHECK)
+    message("Building for check")
+    target_compile_definitions(${MODULE_NAME} PRIVATE FOR_CHECK)
+endif()
+
 # TODO: test with -falign-loops=16
 target_compile_options(${MODULE_NAME} PRIVATE
     -fno-rtti
@@ -67,7 +74,7 @@ target_link_options(${MODULE_NAME} PRIVATE -Wl,-z,pack-relative-relocs)
 
 set_target_properties(${MODULE_NAME} PROPERTIES LINK_DEPENDS ${PROJECT_SOURCE_DIR}/LinkerScripts/aarch64.ld)
 
-target_include_directories(${MODULE_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ ${PROJECT_SOURCE_DIR}/Include/ ${PROJECT_SOURCE_DIR}/Libraries/aarch64/string/aarch64/)
+target_include_directories(${MODULE_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ ${PROJECT_SOURCE_DIR}/Include/)
 
 add_custom_command(TARGET ${MODULE_NAME} POST_BUILD
     COMMAND ${PROJECT_SOURCE_DIR}/Tools/elf2nso -o ${CMAKE_CURRENT_BINARY_DIR}/rtld ${CMAKE_CURRENT_BINARY_DIR}/${MODULE_NAME}${CMAKE_EXECUTABLE_SUFFIX}
