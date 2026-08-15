@@ -123,12 +123,6 @@ __rtld_return_from_exception:
 
     .cfi_endproc
 
-    // TODO: where is the best place to put this?
-    .section ".nx_debuglink", "a"
-    .word 0
-    .word MODULE_NAME_LENGTH
-    .ascii MODULE_NAME
-
     .section ".rocrt.initro", "a"
     .align  2
     .global __rocrt_initro
@@ -137,6 +131,12 @@ __rocrt_initro:
 1:  .word   1
     .word   __rocrt - 1b
     .word   __rocrt_ver - 1b
+
+    // TODO: where is the best place to put this?
+    .section ".nx_debuglink", "a"
+    .word 0
+    .word MODULE_NAME_LENGTH
+    .ascii MODULE_NAME
 
     .section ".rocrt.info", "a"
     .align  2

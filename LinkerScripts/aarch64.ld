@@ -12,7 +12,7 @@ PHDRS
 
 SECTIONS
 {
-  .text : {
+  EX : {
     PROVIDE_HIDDEN(__EX_start = .);
     KEEP(*(.rocrt.init))
     . = ALIGN(0x100);
@@ -36,17 +36,6 @@ SECTIONS
     KEEP(*(.rocrt.info))
   } :rodata
 
-  .rodata : {
-    PROVIDE_HIDDEN(__rodata_start = .);
-    *(.rodata .rodata.*);
-    PROVIDE_HIDDEN(__rodata_end = .);
-  } :rodata
-
-  .hash     : { *(.hash) } :rodata
-  .gnu.hash : { *(.gnu.hash) } :rodata
-  .dynsym   : { *(.dynsym .dynsym.*) } :rodata
-  .dynstr   : { *(.dynstr .dynstr.*) } :rodata
-
   PROVIDE_HIDDEN(__rel_dyn_start = .);
   .rel.dyn : { *(.rel.dyn) } :rodata
   PROVIDE_HIDDEN(__rel_dyn_end = .);
@@ -63,6 +52,19 @@ SECTIONS
   .rela.plt       : { *(.rela.plt) } :rodata
   PROVIDE_HIDDEN(__rela_plt_end = .);
 
+  .relr.dyn       : { *(.relr.dyn) } :rodata
+
+  .hash     : { *(.hash) } :rodata
+  .gnu.hash : { *(.gnu.hash) } :rodata
+  .dynsym   : { *(.dynsym .dynsym.*) } :rodata
+  .dynstr   : { *(.dynstr .dynstr.*) } :rodata
+
+  RO : {
+    PROVIDE_HIDDEN(__rodata_start = .);
+    *(.rodata .rodata.*);
+    PROVIDE_HIDDEN(__rodata_end = .);
+  } :rodata
+
   .gcc_except_table : { *(.gcc_except_table .gcc_except_table.*) } :rodata
   .eh_frame_hdr : {
     PROVIDE_HIDDEN(__eh_frame_hdr_start = .);
@@ -70,6 +72,8 @@ SECTIONS
     PROVIDE_HIDDEN(__eh_frame_hdr_end = .);
   } :rodata
   .eh_frame : { KEEP (*(.eh_frame)) } :rodata
+
+  .api_info : { *(.api_info) } :rodata
 
   .note.gnu.build-id : {
     PROVIDE_HIDDEN(__note_gnu_build_id_start = .);
@@ -113,11 +117,6 @@ SECTIONS
     PROVIDE_HIDDEN(__tbss_end = .);
   } :data
 
-  .data.rela.ro : {
-    *(.data.rela.ro.local*)
-    *(.data.rela.ro .data.rela.ro.*)
-  } :data
-
   .data.rel.ro : {
     *(.data.rel.ro.local*)
     *(.data.rel.ro .data.rel.ro.*)
@@ -139,11 +138,12 @@ SECTIONS
   .got.plt : { *(.got.plt) *(.igot.plt) } :data
   PROVIDE_HIDDEN(__got_plt_end = .);
 
+  /* TODO: this should be an alignment section */
   . = ALIGN(0x1000);
 
   PROVIDE_HIDDEN(__full_relro_end = .);
 
-  .data : {
+  RW : {
     *(.data .data.*)
   } :data
 
@@ -155,12 +155,13 @@ SECTIONS
 
   . = ALIGN(0x10);
 
-  .bss : {
+  ZI : {
     PROVIDE_HIDDEN(__bss_start = .);
     *(.bss .bss.*)
     *(COMMON)
     . = ALIGN(8);
     PROVIDE_HIDDEN(__bss_end = .);
+    /* TODO: this should be an alignment section */
     . = ALIGN(0x1000);
   } :data
 
