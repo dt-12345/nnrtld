@@ -163,10 +163,6 @@ uintptr_t LookupGlobalAuto(const char* name) {
 }
 
 void InitializeModules() {
-    if (util::GetReference(g_AutoLoadList).IsEmpty()) [[unlikely]] {
-        return;
-    }
-
     for (auto& module : util::GetReference(g_AutoLoadList).reverse()) {
         if (module.GetArchData().dtInit) {
             module.GetArchData().dtInit();
