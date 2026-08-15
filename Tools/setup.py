@@ -175,17 +175,21 @@ def main():
     parser = argparse.ArgumentParser("setup.py")
     parser.add_argument("--clean", help="Clean build directory", action="store_true", default=False)
     parser.add_argument("--nso-path", help="Path to original RTLD NSO", default="")
+    parser.add_argument("--for-check", help="Build for Tools/check", action="store_true", default=False)
     args = parser.parse_args()
 
-    compiler_version: str = "14.0.0"
+    compiler_version: str = "16.0.0"
 
-    setup.install_viking()
+    build_tools()
     setup.set_up_compiler(compiler_version)
     fix_config_site(compiler_version)
     clean_compiler_dir(compiler_version)
-    build_tools()
-    setup_rtld_elf(args.nso_path, False)
-    build_rtld(args.clean, True, compiler_version)
+
+    if args.for_check:
+        setup.install_viking()
+        setup_rtld_elf(args.nso_path, False)
+
+    build_rtld(args.clean, args.for_check, compiler_version)
 
 if __name__ == "__main__":
     main()

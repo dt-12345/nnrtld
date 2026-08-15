@@ -11,7 +11,7 @@ most functions do not match, but I would like to eventually get them there
 
 function names and TU splits are mostly just guesses - some are based on the `rocrt` from [Nintendo OSS](https://support.nintendo.com/jp/oss/index.html)
 
-compiler is clang 14.0.x, but if matching isn't a concern, it should build with any clang version that supports c++20
+compiler is clang 16.0.x, but if matching isn't a concern, it should build with any clang version that supports c++20
 
 TODO:
 - match functions (currently, only the trivial functions are matching)
@@ -41,7 +41,7 @@ basic build instructions (requires CMake, Ninja, Python 3, Rust, RTLD NSO)
 - RTLD binary should be from SDK 21.4.0
 - the free demo for Rhythm Heaven Groove should work
 ```
-python3 Tools/setup.py --nso-path <path_to_rtld_binary>
+python3 Tools/setup.py --nso-path <path_to_rtld_binary> --for-check
 
 # to check
 Tools/check
