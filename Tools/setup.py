@@ -157,14 +157,15 @@ def build_rtld(clean: bool, for_check: bool, compiler_version: str) -> None:
 
     if not build_path.is_dir():
         env = os.environ.copy()
-        env["RTLD_CLANG"] = setup.ROOT / "Toolchain" / f"clang-{compiler_version}"
+        if compiler_version:
+            env["RTLD_CLANG"] = setup.ROOT / "Toolchain" / f"clang-{compiler_version}"
 
-        defines = "-DFOR_CHECK=ON" if for_check else ""
+        defines = ["-DFOR_CHECK=ON"] if for_check else []
 
         try:
             subprocess.check_call([
-                "cmake", "-B", build_path, "-S", ".", "-G", "Ninja", build_type, "--toolchain=cmake/toolchain.cmake", defines,
-            ], env=env)
+                "cmake", "-B", build_path, "-S", ".", "-G", "Ninja", build_type, "--toolchain=cmake/toolchain.cmake",
+            ] + defines, env=env)
         except subprocess.CalledProcessError:
             shutil.rmtree(build_path)
             raise
@@ -176,20 +177,23 @@ def main():
     parser.add_argument("--clean", help="Clean build directory", action="store_true", default=False)
     parser.add_argument("--nso-path", help="Path to original RTLD NSO", default="")
     parser.add_argument("--for-check", help="Build for Tools/check", action="store_true", default=False)
+    parser.add_argument("--compiler", help="Clang version", default="")
     args = parser.parse_args()
 
-    compiler_version: str = "16.0.0"
-
     build_tools()
-    setup.set_up_compiler(compiler_version)
-    fix_config_site(compiler_version)
-    clean_compiler_dir(compiler_version)
+
+    if args.compiler:
+        setup.set_up_compiler(args.compiler)
+        fix_config_site(args.compiler)
+        clean_compiler_dir(args.compiler)
+    elif args.for_check:
+        args.compiler = "16.0.0"
 
     if args.for_check:
         setup.install_viking()
         setup_rtld_elf(args.nso_path, False)
 
-    build_rtld(args.clean, args.for_check, compiler_version)
+    build_rtld(args.clean, args.for_check, args.compiler)
 
 if __name__ == "__main__":
     main()

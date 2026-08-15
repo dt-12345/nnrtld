@@ -1,30 +1,65 @@
-# nnrtld
+# WIP nnrtld Decompilation
 
-shitty rtld decompilation (well, reimplementation currently bc decompilation is hard)
-- end goal is a byte-matching binary ...hopefully
+This is a WIP decompilation of the runtime link-editor (`rtld`) binary from version 21.4.0 of the Nintendo SDK. The specific `rtld` binary used for this project can be found in the free demo for *Rhythm Heaven Groove*. Other games using the same nnSdk version may also work, provided that they use the same compiler settings as `rtld`'s compilation is dependent on the game's compiler settings. For example, in games that use Profile-Guided Optimization (PGO) such as recent first-party Nintendo EPD games, `rtld` is also compiled with PGO which makes matching much more difficult. *Rhythm Heaven Groove* appears to be compiled with only `-O3`, meaning `rtld` is also less aggressively optimized in comparison.
 
-currently based on the rtld binary shipped with SDK version 21.4.0 (the build id seems to vary by game/version, but everything else is identical - I haven't checked how lld generates the build id, but it likely includes parts of the ELF that aren't included in the NSO)
+`Include/rocrt.AssemblyOffset.h` and `Sources/rocrt/rocrt_Nso.cpp` are mostly taken from [Nintendo OSS](https://support.nintendo.com/jp/oss/index.html) with some modifications (GPLv2). `Sources/util/util_memcpy_aarch64.S` is taken from [ARM's optimized routines](https://github.com/ARM-software/optimized-routines/blob/master/string/aarch64/memcpy.S) (MIT).
 
-rtld appears to be compiled (or at least linked) alongside the game, so it follows optimization flags from the game (i.e. if a game is compiled with PGO, then rltd is also compiled with PGO)
+This also serves as an `rtld` reimplementation that can be used for game mods and whatever else you may need it for.
 
-most functions do not match, but I would like to eventually get them there
+Currently **does not** generate a matching binary, however, it should be mostly equivalent and functional (as in you should be able to boot a game with it).
 
-function names and TU splits are mostly just guesses - some are based on the `rocrt` from [Nintendo OSS](https://support.nintendo.com/jp/oss/index.html)
+Inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there.
 
-compiler is clang 16.0.x, but if matching isn't a concern, it should build with any clang version that supports c++20
+Thank you to the (Open-EAD project)[https://github.com/open-ead] for much of the tooling.
 
-TODO:
-- match functions (currently, only the trivial functions are matching)
-- match data sections (.bss is matching, the others need some work)
-  - `-Wl,-z now` seems to add both a bind now entry and a flags entry to `.dynamic` but official rtld only has the flags entry
-  - check which functions need `.eh_frame` entries
-- check sdk for functions to align names as best as possible
-  - it's possible some functions may look similar but have similar names because rtld has separate implementations
-- memset/strcmp/strlen probably aren't implemented in assembly
+## Project TODOs
+- Match all functions (currently at 28/41)
+  - This sounds better than it actually is since the 28 were mostly trivial functions
+  - `memset`/`strcmp`/`strlen` probably weren't implemented in assembly since they seem to change between SDK versions
+- Generate matching binary
+  - Match function + data ordering (mostly done)
+  - Match `.eh_frame`/`.eh_frame_hdr` entries
+  - Match `.dynamic` entries
+    - `-Wl,-z now` seems to add both a bind now entry and a flags entry to `.dynamic` but official rtld only has the flags entry
+  - This will likely require manually overriding the build-id as it is calculated from all input sections, including those that get stripped out of the final NSO
+- Better function names/organization
+  - The nnSdk binary includes some similar functions that we can probably use the names of
+  - TU splits are complete guesses, they probably aren't perfect
 
-inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there
+## Building
 
-notes:
+### Requirements
+- CMake 3.13+
+- Ninja (or whatever you want)
+- Clang (w/ C++ 20 support)
+
+```sh
+cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release --toolchain=cmake/toolchain.cmake
+
+ninja -C build
+
+# or if you'd rather use the setup script
+python3 Tools/setup.py
+```
+
+For decompilation, the following are also required:
+- Clang 16.0.0 (installed by `setup.py`)
+- llvm-objdump
+- Rust
+- Python 3
+- Original `rtld` NSO
+
+```sh
+python3 Tools/setup.py --nso-path <path_to_rtld_nso> --for-check
+
+# to make sure everything is setup ok
+Tools/check
+
+# to check a specific function
+Tools/check FunctionName -j EX # optional: -mw to automatically rebuild on file changes
+```
+
+## Some Notes
 - changes from 20.x.x to 21.x.x
   - linker symbols like `__EX_start` are now marked with `__attribute__(__visibility__("hidden"))`
     - this can be seen in that they lost their `.got` entries and are instead accessed directly through `adr`
@@ -35,16 +70,3 @@ notes:
   - `nn::ro::detail::ArchData` sdk version was updated to match
   - `_init` calls a new function before `ProtectRelro` (it's a no-op though)
     - though this may have just been optimized out bc the 20.x.x rtld binaries I'm looking at were compiled with PGO
-
-basic build instructions (requires CMake, Ninja, Python 3, Rust, RTLD NSO)
-- RTLD binary should be from SDK 21.4.0
-- the free demo for Rhythm Heaven Groove should work
-```
-python3 Tools/setup.py --nso-path <path_to_rtld_binary> --for-check
-
-# to check
-Tools/check
-
-# to check a function
-Tools/check FunctionName -j EX
-```
