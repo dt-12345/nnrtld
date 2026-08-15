@@ -72,6 +72,7 @@ void Unexpected(const char* msg) {
     diag::detail::Puts(msg);
     diag::detail::Abort();
     __asm__ __volatile__("udf 0x8002" ::: "memory");
+    __builtin_unreachable();
 }
 
 static Elf64_Word CalcElfHash(const char* name) {
@@ -401,11 +402,11 @@ void Puts(const char* msg) {
     diag::detail::Puts(msg);
 }
 
-[[noreturn]] void RoModule::InitializeSelfError(std::uint32_t) {
+void RoModule::InitializeSelfError(std::uint32_t) {
     diag::detail::Abort();
 }
 
-[[noreturn]] void RoModule::InitializeError(std::uint32_t) {
+void RoModule::InitializeError(std::uint32_t) {
     diag::detail::Abort();
 }
 

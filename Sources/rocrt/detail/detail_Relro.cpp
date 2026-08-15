@@ -1,6 +1,5 @@
 #include "diag.hpp"
 #include "ro.hpp"
-#include "svc.hpp"
 
 namespace nn::rocrt::detail {
 

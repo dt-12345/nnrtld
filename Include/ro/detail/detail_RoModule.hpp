@@ -61,8 +61,8 @@ public:
         }
     }
 
-    [[noreturn]] static void InitializeSelfError(std::uint32_t);
-    [[noreturn]] static void InitializeError(std::uint32_t);
+    static void InitializeSelfError(std::uint32_t);
+    static void InitializeError(std::uint32_t);
 
     [[nodiscard]] static constexpr size_t GetListNodeOffset() { return 0; }
 

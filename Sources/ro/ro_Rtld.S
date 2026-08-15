@@ -1,3 +1,5 @@
+#include "Config/module.h"
+
 	.section ".text","ax"
 	.global _ZN2nn2ro9BindEntryEv
     .hidden _ZN2nn2ro9BindEntryEv
@@ -51,3 +53,4 @@ _ZN2nn2ro9BindEntryEv:
     br x16
 
     .cfi_endproc
+    SIZE(_ZN2nn2ro9BindEntryEv)

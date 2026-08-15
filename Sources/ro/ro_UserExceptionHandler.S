@@ -1,3 +1,5 @@
+#include "Config/module.h"
+
     .section ".text","ax"
 	.global _ZN2nn2ro6detail24SetExceptionHandlerReadyEv
     .hidden _ZN2nn2ro6detail24SetExceptionHandlerReadyEv
@@ -18,6 +20,7 @@ set_ready:
     ret
 
     .cfi_endproc
+    SIZE(_ZN2nn2ro6detail24SetExceptionHandlerReadyEv)
 
     .section ".data","a"
     .global _ZN2nn2ro6detail27g_UserExceptionHandlerReadyE
