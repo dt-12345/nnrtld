@@ -20,7 +20,6 @@ Thank you to the [Open-EAD project](https://github.com/open-ead) for much of the
   - Match function + data ordering (mostly done)
   - Match `.eh_frame`/`.eh_frame_hdr` entries
   - Match `.dynamic` entries
-    - `-Wl,-z now` seems to add both a bind now entry and a flags entry to `.dynamic` but official rtld only has the flags entry
   - This will likely require manually overriding the build-id as it is calculated from all input sections, including those that get stripped out of the final NSO
 - Better function names/organization
   - The nnSdk binary includes some similar functions that we can probably use the names of
