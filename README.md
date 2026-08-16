@@ -70,3 +70,6 @@ Tools/check FunctionName -j EX # optional: -mw to automatically rebuild on file 
   - `nn::ro::detail::ArchData` sdk version was updated to match
   - `_init` calls a new function before `ProtectRelro` (it's a no-op though)
     - though this may have just been optimized out bc the 20.x.x rtld binaries I'm looking at were compiled with PGO
+  - `nn::ro::detail::RoModule::Initialize` now checks for `DT_AARCH64_PAC_PLT`
+    - on switch 1, this causes an error if present
+    - presumably on switch 2, this would be supported
