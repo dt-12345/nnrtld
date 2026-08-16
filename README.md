@@ -13,8 +13,8 @@ Inspired by https://github.com/marysaka/oss-rtld but this does not use any code 
 Thank you to the [Open-EAD project](https://github.com/open-ead) for much of the tooling.
 
 ## Project TODOs
-- Match all functions (currently at 28/41)
-  - This sounds better than it actually is since the 28 were mostly trivial functions
+- Match all functions (currently at 29/41)
+  - This sounds better than it actually is since the 29 were mostly trivial functions
   - `memset`/`strcmp`/`strlen` probably weren't implemented in assembly since they seem to change between SDK versions
 - Generate matching binary
   - Match function + data ordering (mostly done)

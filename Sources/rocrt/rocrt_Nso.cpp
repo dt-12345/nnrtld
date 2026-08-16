@@ -63,7 +63,7 @@ namespace {
 
         for (unsigned long index = numAtExitEntry; index > begin; index--)
         {
-            AtExitEntry* entry = &__atexit_start[index - 1];
+            AtExitEntry* entry = __atexit_start + index - 1;
             
             unsigned long newBegin = g_AtExitEntryCount;
             unsigned long newEnd = newBegin;
