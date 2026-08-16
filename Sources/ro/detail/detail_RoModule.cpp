@@ -1,6 +1,8 @@
 #include "diag.hpp"
 #include "ro.hpp"
 
+#include <bit>
+
 namespace nn {
 
 namespace rocrt {
@@ -9,29 +11,27 @@ extern util::TypedStorage<ro::detail::RoModule> g_RoModule;
 
 namespace ro::detail {
 
-void RoModule::FixRelativeRel(const Elf64_Rel* /* pRel */, ErrorFunc errorCallback) {
+void RoModule::FixRelativeRel(const Elf64_Rel* /* pRel */, uintptr_t /* base */, ErrorFunc errorCallback) {
     errorCallback("RoModule::FixRelativeRel is called");
 }
 
-void RoModule::FixRelativeRela(const Elf64_Rela* pRel, ErrorFunc /* errorCallback */) {
+void RoModule::FixRelativeRela(const Elf64_Rela* pRel, uintptr_t base, ErrorFunc /* errorCallback */) {
     if (ELF64_R_TYPE(pRel->r_info) == R_AARCH64_RELATIVE) {
-        *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = m_Base + pRel->r_addend;
+        *reinterpret_cast<uintptr_t*>(base + pRel->r_offset) = base + pRel->r_addend;
     }
 }
 
-void RoModule::FixRelativeRelr(const Elf64_Dyn* pDyn, ErrorFunc /* errorCallback */) {
+void RoModule::FixRelativeRelr(const Elf64_Dyn* pDyn, uintptr_t base, ErrorFunc /* errorCallback */) {
     const Elf64_Relr* pRelr = nullptr;
     Elf64_Xword relrSize = 0;
 
-    for (; pDyn->d_tag != DT_NULL; ++pDyn) {
-        switch (pDyn->d_tag) {
+    for (auto pEntry = pDyn++; pEntry->d_tag != DT_NULL; pEntry = pDyn++) {
+        switch (pEntry->d_tag) {
             case DT_RELRSZ:
-                relrSize = pDyn->d_un.d_val;
+                relrSize = pEntry->d_un.d_val;
                 break;
             case DT_RELR:
-                pRelr = reinterpret_cast<const Elf64_Relr*>(m_Base + pDyn->d_un.d_ptr);
-                break;
-            default:
+                pRelr = reinterpret_cast<const Elf64_Relr*>(base + pEntry->d_un.d_ptr);
                 break;
         }
     }
@@ -39,33 +39,39 @@ void RoModule::FixRelativeRelr(const Elf64_Dyn* pDyn, ErrorFunc /* errorCallback
     if (pRelr != nullptr && relrSize >= sizeof(Elf64_Relr)) {
         uintptr_t* pTarget = nullptr;
         for (size_t i = 0; i < relrSize / sizeof(Elf64_Relr); ++i) {
-            auto value = pRelr[i];
+            auto value = *pRelr;
             if ((value & 1) == 0) {
-                pTarget = reinterpret_cast<uintptr_t*>(m_Base + value);
-                *pTarget++ += m_Base;
+                pTarget = reinterpret_cast<uintptr_t*>(base + value);
+                *pTarget++ += base;
             } else {
-                for (size_t j = 0; (value >>= 1) != 0; ++j) {
-                    if (value & 1) {
-                        pTarget[j] += m_Base;
+                if (value > 2) {
+                    value >>= 1;
+                    for (size_t index = 0; value & ~(1ull << index); value &= ~(1ull << index)) {
+                        index = std::countr_zero(value);
+                        pTarget[index] += base;
                     }
                 }
-                pTarget += sizeof(void*) * 8 - 1;
+                pTarget += sizeof(Elf64_Relr) * CHAR_BIT - 1;
             }
+            pRelr++;
         }
     }
 }
 
 void RoModule::FixRelativeRelocations(ErrorFunc errorCallback) {
     // fix relocations found in this module
+    const auto base = m_Base;
+    const Elf64_Rel* pRel = m_Rel;
     for (size_t i = 0; i < m_ArchData.relEntryCount; ++i) {
-        FixRelativeRel(m_Rel + i, errorCallback);
+        FixRelativeRel(pRel++, base, errorCallback);
     }
 
-    for (size_t i = 0; i < m_ArchData.relaEntryCount; ++i) {
-        FixRelativeRela(m_Rela + i, errorCallback);
+    const Elf64_Rela* pRela = m_Rela;
+    for (size_t i = m_ArchData.relaEntryCount; i > 0; --i) {
+        FixRelativeRela(pRela++, base, errorCallback);
     }
 
-    FixRelativeRelr(m_ArchData.dyn, errorCallback);
+    FixRelativeRelr(m_ArchData.dyn, m_Base, errorCallback);
 }
 
 void Unexpected(const char* msg) {

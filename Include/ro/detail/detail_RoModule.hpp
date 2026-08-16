@@ -78,9 +78,9 @@ private:
     void LogUnresolvedSymbol(const Elf64_Sym* sym) const;
     void RtldLogUnresolvedSymbol(const Elf64_Sym* sym) const;
 
-    void FixRelativeRel(const Elf64_Rel* pRel, ErrorFunc errorCallback);
-    void FixRelativeRela(const Elf64_Rela* pRel, ErrorFunc errorCallback);
-    void FixRelativeRelr(const Elf64_Dyn* pDyn, ErrorFunc errorCallback);
+    static void FixRelativeRel(const Elf64_Rel* pRel, uintptr_t base, ErrorFunc errorCallback);
+    static void FixRelativeRela(const Elf64_Rela* pRel, uintptr_t base, ErrorFunc errorCallback);
+    static void FixRelativeRelr(const Elf64_Dyn* pDyn, uintptr_t base, ErrorFunc errorCallback);
     
     void RelocateRel(
         const Elf64_Rel* pRel,
