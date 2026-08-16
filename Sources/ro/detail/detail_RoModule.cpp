@@ -38,22 +38,21 @@ void RoModule::FixRelativeRelr(const Elf64_Dyn* pDyn, uintptr_t base, ErrorFunc 
 
     if (pRelr != nullptr && relrSize >= sizeof(Elf64_Relr)) {
         uintptr_t* pTarget = nullptr;
-        for (size_t i = 0; i < relrSize / sizeof(Elf64_Relr); ++i) {
-            auto value = *pRelr;
+        for (size_t i = 0; i < relrSize / sizeof(Elf64_Relr); ++i, ++pRelr) {
+            Elf64_Relr value = *pRelr;
             if ((value & 1) == 0) {
                 pTarget = reinterpret_cast<uintptr_t*>(base + value);
                 *pTarget++ += base;
             } else {
-                if (value > 2) {
-                    value >>= 1;
-                    for (size_t index = 0; value & ~(1ull << index); value &= ~(1ull << index)) {
-                        index = std::countr_zero(value);
+                if (value >>= 1) {
+                    for (Elf64_Relr mask = ~0ull; value & mask; value &= mask) {
+                        const size_t index = std::countr_zero(value);
                         pTarget[index] += base;
+                        mask = ~(1ull << index);
                     }
                 }
                 pTarget += sizeof(Elf64_Relr) * CHAR_BIT - 1;
             }
-            pRelr++;
         }
     }
 }
