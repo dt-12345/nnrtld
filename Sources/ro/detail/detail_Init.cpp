@@ -15,8 +15,6 @@ LookupGlobalManualFunc* g_LookupGlobalManualFunctionPointer;
 util::TypedStorage<RoModuleList> g_ManualLoadList;
 util::TypedStorage<RoModuleList> g_AutoLoadList;
 
-#define NN_ASSERT(EXPR) do { if (!(EXPR)) { while (true) { __asm__ __volatile__("" ::: "memory"); } } } while (0)
-
 void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     const Elf64_Rela* pRela = nullptr;
     Elf64_Xword relCount = 0;
@@ -81,30 +79,6 @@ void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     }
 }
 
-template <QueryMemoryFunction QueryFunc>
-static svc::MemoryInfo GetNextRegion(uintptr_t baseAddr) {
-    std::uint32_t pageInfo = 0u;
-    svc::MemoryInfo memoryInfo{};
-    NN_ASSERT(QueryFunc(&memoryInfo, &pageInfo, baseAddr) == 0);
-    return memoryInfo;
-}
-
-template <QueryMemoryFunction QueryFunc, typename CallbackT>
-static void ForEachRegion(uintptr_t addr, CallbackT func) {
-    while (true) {
-        svc::MemoryInfo memoryInfo = GetNextRegion<QueryFunc>(addr);
-
-        func(memoryInfo);
-
-        const auto lastAddr = addr;
-        addr = memoryInfo.address + memoryInfo.size;
-
-        if (addr <= lastAddr) {
-            break;
-        }
-    }
-}
-
 void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     util::ConstructAt(rocrt::g_RoModule);
     util::ConstructAt(g_ManualLoadList);
@@ -113,7 +87,7 @@ void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     NN_ASSERT(__rocrt.signature == rocrt::MODULE_HEADER_SIGNATURE);
     
     // manually handle this module first
-    const auto moduleEnd = util::AlignUp(reinterpret_cast<uintptr_t>(&__rocrt) + __rocrt.bssEndOffset, 0x1000ul);
+    const auto moduleEnd = util::AlignUp(reinterpret_cast<uintptr_t>(&__rocrt) + __rocrt.bssEndOffset, cSegmentAlignment);
     util::GetReference(rocrt::g_RoModule).Initialize(
         moduleBase,
         moduleEnd - moduleBase,
@@ -138,7 +112,7 @@ void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
             auto pModule = reinterpret_cast<RoModule*>(reinterpret_cast<uintptr_t>(header) + header->roModuleOffset);
             pModule->Reset();
             
-            const auto moduleSize = util::AlignUp(reinterpret_cast<uintptr_t>(header) + header->bssEndOffset, uintptr_t(0x1000)) - memoryInfo.address;
+            const auto moduleSize = util::AlignUp(reinterpret_cast<uintptr_t>(header) + header->bssEndOffset, cSegmentAlignment) - memoryInfo.address;
             NN_ASSERT(moduleSize >= memoryInfo.size);
 
             pModule->Initialize(

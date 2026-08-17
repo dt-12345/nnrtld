@@ -38,8 +38,8 @@ struct ModuleVersion {
 
 struct RocrtInit {
     std::uint32_t entryInstruction;
-    std::int32_t  rocrtOffset;
-    std::int32_t  rocrtVersionOffset;
+    std::uint32_t rocrtOffset;
+    std::uint32_t rocrtVersionOffset;
 };
 
 struct RocrtVersion {
