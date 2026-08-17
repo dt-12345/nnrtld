@@ -20,7 +20,7 @@ struct ModuleHeader {
     std::uint32_t bssEndOffset;
     std::int32_t  ehFrameHdrStartOffset;
     std::int32_t  ehFrameHdrEndOffset;
-    std::int32_t  roMduleOffset;
+    std::int32_t  roModuleOffset;
     std::int32_t  relroStartOffset;
     std::int32_t  fullRelroEndOffset;
     std::int32_t  nxDebuglinkStartOffset;

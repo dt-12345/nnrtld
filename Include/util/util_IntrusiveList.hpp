@@ -10,6 +10,11 @@ class IntrusiveListNode {
 public:
     constexpr IntrusiveListNode() noexcept : m_Prev(this), m_Next(this) {}
 
+    constexpr void Initialize() noexcept {
+        m_Prev = this;
+        m_Next = this;
+    }
+
     constexpr IntrusiveListNode* GetPrev() noexcept { return m_Prev; }
     constexpr const IntrusiveListNode* GetPrev() const noexcept { return m_Prev; }
 

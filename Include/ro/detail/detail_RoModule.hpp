@@ -16,7 +16,7 @@ public:
     RoModule() = default;
 
     void Reset() {
-        m_ListNode = {};
+        m_ListNode.Initialize(); // maybe we make this util::TypedStorage and instead construct it
     }
 
     void Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std::uint8_t flags, void (*errorCallback)(Elf64_Sxword tag, Elf64_Xword val));

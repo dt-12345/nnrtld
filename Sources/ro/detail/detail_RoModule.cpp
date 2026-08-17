@@ -48,7 +48,7 @@ void RoModule::FixRelativeRelr(const Elf64_Dyn* pDyn, uintptr_t base, ErrorFunc 
                     for (Elf64_Relr mask = ~0ull; value & mask; value &= mask) {
                         const size_t index = std::countr_zero(value);
                         pTarget[index] += base;
-                        mask = ~(1ull << index);
+                        mask = ~(Elf64_Relr(1) << index);
                     }
                 }
                 pTarget += sizeof(Elf64_Relr) * CHAR_BIT - 1;

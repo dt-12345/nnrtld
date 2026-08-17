@@ -91,8 +91,9 @@ static svc::MemoryInfo GetNextRegion(uintptr_t baseAddr) {
 
 template <QueryMemoryFunction QueryFunc, typename CallbackT>
 static void ForEachRegion(uintptr_t addr, CallbackT func) {
-    svc::MemoryInfo memoryInfo = GetNextRegion<QueryFunc>(addr);
     while (true) {
+        svc::MemoryInfo memoryInfo = GetNextRegion<QueryFunc>(addr);
+
         func(memoryInfo);
 
         const auto lastAddr = addr;
@@ -101,8 +102,6 @@ static void ForEachRegion(uintptr_t addr, CallbackT func) {
         if (addr <= lastAddr) {
             break;
         }
-
-        memoryInfo = GetNextRegion<QueryFunc>(addr);
     }
 }
 
@@ -125,7 +124,7 @@ void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     util::GetReference(g_AutoLoadList).InsertBack(util::GetPointer(rocrt::g_RoModule));
 
     // search for other modules
-    ForEachRegion<svc::QueryMemory>(0, [&](const svc::MemoryInfo& memoryInfo) -> void {
+    ForEachRegion<svc::QueryMemory>(0, [moduleBase](const svc::MemoryInfo& memoryInfo) -> void {
         if ((memoryInfo.permission & svc::MemoryPermission_Execute) != 0 && memoryInfo.state == svc::MemoryState_Code && memoryInfo.address != moduleBase) {
             const rocrt::ModuleHeader* header = nullptr;
             rocrt::ModuleVersion version{};
@@ -136,10 +135,10 @@ void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
                 memset(bss, 0, header->bssEndOffset - header->bssStartOffset);
             }
 
-            auto pModule = reinterpret_cast<RoModule*>(reinterpret_cast<uintptr_t>(header) + header->roMduleOffset);
+            auto pModule = reinterpret_cast<RoModule*>(reinterpret_cast<uintptr_t>(header) + header->roModuleOffset);
             pModule->Reset();
             
-            const auto moduleSize = util::AlignUp(reinterpret_cast<uintptr_t>(header) + header->bssEndOffset, 0x1000ul) - memoryInfo.address;
+            const auto moduleSize = util::AlignUp(reinterpret_cast<uintptr_t>(header) + header->bssEndOffset, uintptr_t(0x1000)) - memoryInfo.address;
             NN_ASSERT(moduleSize >= memoryInfo.size);
 
             pModule->Initialize(
