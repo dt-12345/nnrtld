@@ -16,8 +16,8 @@ constexpr inline std::uint32_t AARCH64_ENTRYPOINT_BRANCH = 0x14000002;
 struct ModuleHeader {
     std::uint32_t signature;
     std::int32_t  dynamicOffset;
-    std::int32_t  bssStartOffset;
-    std::int32_t  bssEndOffset;
+    std::uint32_t bssStartOffset;
+    std::uint32_t bssEndOffset;
     std::int32_t  ehFrameHdrStartOffset;
     std::int32_t  ehFrameHdrEndOffset;
     std::int32_t  roMduleOffset;

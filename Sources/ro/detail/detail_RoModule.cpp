@@ -154,13 +154,8 @@ Elf64_Sym* RoModule::LookupSymbol(const char* name) const {
 
 uintptr_t LookupGlobalAuto(const char* name) {
     for (const auto& module : util::GetReference(g_AutoLoadList)) {
-        if (auto pSym = module.LookupSymbol(name)) {
-            switch (ELF64_ST_BIND(pSym->st_info)) {
-                case STB_LOCAL:
-                    break;
-                default:
-                    return module.GetBase() + pSym->st_value;
-            }
+        if (auto pSym = module.GetNonLocalSymbol(name)) {
+            return module.GetBase() + pSym->st_value;
         }
     }
 
@@ -200,18 +195,20 @@ StartCallback* GetFinalizeModules() {
 bool RoModule::TryResolveSymbol(
     uintptr_t* pOutTarget,
     const Elf64_Sym* pSym,
+    uintptr_t addend,
     bool* pOutManual,
     void (* /* jumpSlotResolver */)(),
     uintptr_t (*lookupAuto)(const char*),
     uintptr_t (*lookupManual)(const RoModule*, const char*)
 ) const {
-    const char* name = m_ArchData.strTable + pSym->st_name;
+    const auto name = pSym->st_name;
+    const auto info = pSym->st_info;
 
     uintptr_t targetAddr = 0;
     if (ELF64_ST_VISIBILITY(pSym->st_other) == STV_DEFAULT) {
-        targetAddr = lookupAuto(name);
+        targetAddr = lookupAuto(m_ArchData.strTable + name);
         if (lookupManual != nullptr && targetAddr == 0) {
-            targetAddr = lookupManual(this, name);
+            targetAddr = lookupManual(this, m_ArchData.strTable + name);
             if (pOutManual) {
                 *pOutManual = true;
             }
@@ -225,13 +222,18 @@ bool RoModule::TryResolveSymbol(
             *pOutManual = false;
         }
 
-        if (auto pResolved = LookupSymbol(name)) {
+        if (auto pResolved = LookupSymbol(m_ArchData.strTable + name)) {
             targetAddr = m_Base + pResolved->st_value;
         }
     }
 
-    *pOutTarget = targetAddr;
-    return targetAddr != 0 || ELF64_ST_BIND(pSym->st_info) == STB_WEAK;
+    if (targetAddr != 0) {
+        *pOutTarget = targetAddr + addend;
+        return true;
+    } else {
+        *pOutTarget = 0;
+        return ELF64_ST_BIND(info) == STB_WEAK;
+    }
 }
 
 void RoModule::RelocateRel(
@@ -263,8 +265,8 @@ void RoModule::RelocateRela(
             auto pSym = m_ArchData.symTable + ELF64_R_SYM(pRel->r_info);
             uintptr_t targetAddr = 0;
             bool manual = false;
-            if (TryResolveSymbol(&targetAddr, pSym, &manual, jumpSlotResolver, lookupAuto, lookupManual)) {
-                *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = targetAddr + pRel->r_addend;
+            if (TryResolveSymbol(&targetAddr, pSym, pRel->r_addend, &manual, jumpSlotResolver, lookupAuto, lookupManual)) {
+                *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = targetAddr;
 
                 if (targetAddr == 0 || (manual && (targetAddr < m_Base || targetAddr >= m_Base + m_ArchData.moduleSize))) {
                     m_ArchData.flags |= ArchData::Flags_HasUnresolved;
@@ -323,10 +325,10 @@ void RoModule::RelocatePltRela(
     if (lazy) {
         *pTarget += m_Base;
     } else {
-        auto pSym = m_ArchData.symTable + ELF64_R_SYM(pRel->r_info);
+        const auto pSym = m_ArchData.symTable + ELF64_R_SYM(pRel->r_info);
         uintptr_t symAddr = 0;
-        if (TryResolveSymbol(&symAddr, pSym, nullptr, jumpSlotResolver, lookupAuto, lookupManual)) {
-            *pTarget = symAddr + pRel->r_addend;
+        if (TryResolveSymbol(&symAddr, pSym, pRel->r_addend, nullptr, jumpSlotResolver, lookupAuto, lookupManual)) {
+            *pTarget = symAddr;
         } else if (debug) {
             warningCallback("[ro] warning: unresolved symbol = '");
             warningCallback(m_ArchData.strTable + pSym->st_name);
@@ -379,15 +381,15 @@ uintptr_t RoModule::BindJumpSlotRela(std::uint32_t index) {
     const auto pSym = m_ArchData.symTable + ELF64_R_SYM(pRel->r_info);
 
     uintptr_t targetAddr;
-    if (!TryResolveSymbol(&targetAddr, pSym, nullptr, BindEntry, LookupGlobalAuto, g_LookupGlobalManualFunctionPointer)) {
+    if (!TryResolveSymbol(&targetAddr, pSym, pRel->r_addend, nullptr, BindEntry, LookupGlobalAuto, g_LookupGlobalManualFunctionPointer)) {
         diag::detail::Puts("[rtld] warning: unresolved symbol = '");
         diag::detail::Puts(m_ArchData.strTable + pSym->st_name);
         diag::detail::Puts("'\n");
+        targetAddr = 0;
     }
 
-    const auto address = targetAddr + pRel->r_addend;
-    *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = address;
-    return address;
+    *reinterpret_cast<uintptr_t*>(m_Base + pRel->r_offset) = targetAddr;
+    return targetAddr;
 }
 
 // based on the sdk, this is supposed to be nn::ro::detail::Bind and not a member function but whatever
@@ -403,11 +405,11 @@ void Puts(const char* msg) {
     diag::detail::Puts(msg);
 }
 
-void RoModule::InitializeSelfError(std::uint32_t) {
+void RoModule::InitializeSelfError(Elf64_Sxword, Elf64_Xword) {
     diag::detail::Abort();
 }
 
-void RoModule::InitializeError(std::uint32_t) {
+void RoModule::InitializeError(Elf64_Sxword, Elf64_Xword) {
     diag::detail::Abort();
 }
 

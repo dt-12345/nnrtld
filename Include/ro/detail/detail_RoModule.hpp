@@ -19,7 +19,7 @@ public:
         m_ListNode = {};
     }
 
-    void Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std::uint8_t flags, void (*errorCallback)(std::uint32_t code));
+    void Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std::uint8_t flags, void (*errorCallback)(Elf64_Sxword tag, Elf64_Xword val));
 
     void FixRelativeRelocations(ErrorFunc errorCallback);
     void Relocate(
@@ -61,8 +61,8 @@ public:
         }
     }
 
-    static void InitializeSelfError(std::uint32_t);
-    static void InitializeError(std::uint32_t);
+    static void InitializeSelfError(Elf64_Sxword tag, Elf64_Xword val);
+    static void InitializeError(Elf64_Sxword tag, Elf64_Xword val);
 
     [[nodiscard]] static constexpr size_t GetListNodeOffset() { return 0; }
 
@@ -70,6 +70,7 @@ private:
     bool TryResolveSymbol(
         uintptr_t* pOutTarget,
         const Elf64_Sym* pSym,
+        uintptr_t addend,
         bool* pOutManual,
         void (*jumpSlotResolver)(),
         uintptr_t (*lookupAuto)(const char*),
@@ -121,8 +122,9 @@ private:
         ErrorFunc errorCallback
     );
 
-    uintptr_t BindJumpSlotRel(std::uint32_t index);
-    uintptr_t BindJumpSlotRela(std::uint32_t index);
+    // kinda hacky, maybe it'll inline properly once they match
+    [[gnu::always_inline]] uintptr_t BindJumpSlotRel(std::uint32_t index);
+    [[gnu::always_inline]] uintptr_t BindJumpSlotRela(std::uint32_t index);
 
     util::IntrusiveListNode m_ListNode;
     union {

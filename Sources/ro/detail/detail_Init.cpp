@@ -15,18 +15,14 @@ LookupGlobalManualFunc* g_LookupGlobalManualFunctionPointer;
 util::TypedStorage<RoModuleList> g_ManualLoadList;
 util::TypedStorage<RoModuleList> g_AutoLoadList;
 
-namespace {
-void Error() {
-    while (true) { __asm__ __volatile__("" ::: "memory"); }
-}
-} // anonymouse namespace
+#define NN_ASSERT(EXPR) do { if (!(EXPR)) { while (true) { __asm__ __volatile__("" ::: "memory"); } } } while (0)
 
 void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     const Elf64_Rela* pRela = nullptr;
-    const Elf64_Relr* pRelr = nullptr;
     Elf64_Xword relCount = 0;
-    Elf64_Xword relaCount = 0;
     Elf64_Xword relrCount = 0;
+    Elf64_Xword relaCount = 0;
+    const Elf64_Relr* pRelr = nullptr;
 
     for (; pDyn->d_tag != DT_NULL; ++pDyn) {
         switch (pDyn->d_tag) {
@@ -34,14 +30,10 @@ void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
                 pRela = reinterpret_cast<const Elf64_Rela*>(moduleBase + pDyn->d_un.d_ptr);
                 break;
             case DT_RELAENT:
-                if (pDyn->d_un.d_val != sizeof(Elf64_Rela)) {
-                    Error();
-                }
+                NN_ASSERT(pDyn->d_un.d_val == sizeof(Elf64_Rela));
                 break;
             case DT_RELENT:
-                if (pDyn->d_un.d_val != sizeof(Elf64_Rel)) {
-                    Error();
-                }
+                NN_ASSERT(pDyn->d_un.d_val == sizeof(Elf64_Rel));
                 break;
             case DT_RELRSZ:
                 relrCount = pDyn->d_un.d_val;
@@ -50,47 +42,13 @@ void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
                 pRelr = reinterpret_cast<const Elf64_Relr*>(moduleBase + pDyn->d_un.d_ptr);
                 break;
             case DT_RELRENT:
-                if (pDyn->d_un.d_val != sizeof(Elf64_Relr)) {
-                    Error();
-                }
+                NN_ASSERT(pDyn->d_un.d_val == sizeof(Elf64_Relr));
                 break;
             case DT_RELACOUNT:
                 relaCount = pDyn->d_un.d_val;
                 break;
             case DT_RELCOUNT:
                 relCount = pDyn->d_un.d_val;
-                break;
-
-            case DT_NULL:
-            case DT_NEEDED:
-            case DT_PLTRELSZ:
-            case DT_PLTGOT:
-            case DT_HASH:
-            case DT_STRTAB:
-            case DT_SYMTAB:
-            case DT_RELASZ:
-            case DT_SYMENT:
-            case DT_INIT:
-            case DT_FINI:
-            case DT_SONAME:
-            case DT_RPATH:
-            case DT_SYMBOLIC:
-            case DT_REL:
-            case DT_RELSZ:
-            case DT_PLTREL:
-            case DT_DEBUG:
-            case DT_TEXTREL:
-            case DT_JMPREL:
-            case DT_BIND_NOW:
-            case DT_INIT_ARRAY:
-            case DT_FINI_ARRAY:
-            case DT_INIT_ARRAYSZ:
-            case DT_FINI_ARRAYSZ:
-            case DT_RUNPATH:
-            case DT_FLAGS:
-            case DT_PREINIT_ARRAY:
-            case DT_PREINIT_ARRAYSZ:
-            case DT_SYMTAB_SHNDX:
                 break;
         }
     }
@@ -102,9 +60,7 @@ void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
         }
     }
 
-    if (relCount) {
-        Error();
-    }
+    NN_ASSERT(relCount == 0);
 
     if (pRelr != nullptr && relrCount >= sizeof(Elf64_Relr)) {
         uintptr_t* pTarget = nullptr;
@@ -125,12 +81,37 @@ void InitializeSelfModule(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     }
 }
 
+template <QueryMemoryFunction QueryFunc>
+static svc::MemoryInfo GetNextRegion(uintptr_t baseAddr) {
+    std::uint32_t pageInfo = 0u;
+    svc::MemoryInfo memoryInfo{};
+    NN_ASSERT(QueryFunc(&memoryInfo, &pageInfo, baseAddr) == 0);
+    return memoryInfo;
+}
+
+template <QueryMemoryFunction QueryFunc, typename CallbackT>
+static void ForEachRegion(uintptr_t addr, CallbackT func) {
+    svc::MemoryInfo memoryInfo = GetNextRegion<QueryFunc>(addr);
+    while (true) {
+        func(memoryInfo);
+
+        const auto lastAddr = addr;
+        addr = memoryInfo.address + memoryInfo.size;
+
+        if (addr <= lastAddr) {
+            break;
+        }
+
+        memoryInfo = GetNextRegion<QueryFunc>(addr);
+    }
+}
+
 void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     util::ConstructAt(rocrt::g_RoModule);
     util::ConstructAt(g_ManualLoadList);
     util::ConstructAt(g_AutoLoadList);
 
-    while (__rocrt.signature != rocrt::MODULE_HEADER_SIGNATURE) { /* ... */ }
+    NN_ASSERT(__rocrt.signature == rocrt::MODULE_HEADER_SIGNATURE);
     
     // manually handle this module first
     const auto moduleEnd = util::AlignUp(reinterpret_cast<uintptr_t>(&__rocrt) + __rocrt.bssEndOffset, 0x1000ul);
@@ -144,21 +125,11 @@ void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     util::GetReference(g_AutoLoadList).InsertBack(util::GetPointer(rocrt::g_RoModule));
 
     // search for other modules
-    uintptr_t currentAddr = 0;
-    while (true) {
-        std::uint32_t pageInfo;
-        svc::MemoryInfo memoryInfo{};
-        if (svc::QueryMemory(&memoryInfo, &pageInfo, currentAddr)) {
-            Error();
-        }
-
-        // a valid module should start with executable code (also skip over this module because we just handled it above)
+    ForEachRegion<svc::QueryMemory>(0, [&](const svc::MemoryInfo& memoryInfo) -> void {
         if ((memoryInfo.permission & svc::MemoryPermission_Execute) != 0 && memoryInfo.state == svc::MemoryState_Code && memoryInfo.address != moduleBase) {
             const rocrt::ModuleHeader* header = nullptr;
             rocrt::ModuleVersion version{};
-            if (!FindModuleHeader<svc::QueryMemory>(&header, &version, memoryInfo.address)) {
-                Error();
-            }
+            NN_ASSERT(FindModuleHeader<svc::QueryMemory>(&header, &version, memoryInfo.address));
 
             if (header->bssStartOffset != header->bssEndOffset) {
                 void* bss = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(header) + header->bssStartOffset);
@@ -167,27 +138,23 @@ void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
 
             auto pModule = reinterpret_cast<RoModule*>(reinterpret_cast<uintptr_t>(header) + header->roMduleOffset);
             pModule->Reset();
-            auto end = util::AlignUp(reinterpret_cast<uintptr_t>(header) + header->bssEndOffset, 0x1000ul);
-            while (memoryInfo.size > end - memoryInfo.address) {
-                /* ... */
-            }
+            
+            const auto moduleSize = util::AlignUp(reinterpret_cast<uintptr_t>(header) + header->bssEndOffset, 0x1000ul) - memoryInfo.address;
+            NN_ASSERT(moduleSize >= memoryInfo.size);
+
             pModule->Initialize(
                 memoryInfo.address,
-                end - memoryInfo.address,
+                moduleSize,
                 reinterpret_cast<Elf64_Dyn*>(reinterpret_cast<uintptr_t>(header) + header->dynamicOffset),
                 0,
                 RoModule::InitializeError
             );
+
             pModule->FixRelativeRelocations(Unexpected);
+
             util::GetReference(g_AutoLoadList).InsertBack(pModule);
         }
-
-        const auto lastAddr = currentAddr;
-        currentAddr = memoryInfo.address + memoryInfo.size;
-        if (currentAddr <= lastAddr) {
-            break;
-        }
-    }
+    });
 
     for (auto& module : util::GetReference(g_AutoLoadList)) {
         module.SetSymbol("_ZN2nn2ro6detail15g_pAutoLoadListE", reinterpret_cast<uintptr_t>(&g_AutoLoadList));
@@ -210,7 +177,7 @@ void Initialize(uintptr_t moduleBase, Elf64_Dyn* pDyn) {
     }
 }
 
-void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std::uint8_t flags, void (*errorCallback)(std::uint32_t code)) {
+void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std::uint8_t flags, void (*errorCallback)(Elf64_Sxword tag, Elf64_Xword val)) {
     m_ArchData.moduleSize = size;
     m_Base = start;
     m_ArchData.dyn = pDyn;
@@ -234,6 +201,7 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std:
     _20 = 0;
     m_ArchData.sdkVersion = rocrt::NN_SDK_VERSION_MAJOR;
 
+    void* pPltRel = nullptr;
     Elf64_Dyn* pHash = nullptr;
     Elf64_Dyn* pGnuHash = nullptr;
     for (; pDyn->d_tag != DT_NULL; ++pDyn) {
@@ -256,24 +224,21 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std:
             case DT_RELA:
                 m_Rela = reinterpret_cast<Elf64_Rela*>(m_Base + pDyn->d_un.d_ptr);
                 break;
-            case DT_REL:
-                m_Rel = reinterpret_cast<Elf64_Rel*>(m_Base + pDyn->d_un.d_ptr);
-                break;
             case DT_RELASZ:
                 m_ArchData.relaSize = pDyn->d_un.d_val;
                 break;
             case DT_RELAENT:
                 if (pDyn->d_un.d_val != sizeof(Elf64_Rela)) {
-                    errorCallback(DT_RELAENT);
-                }
-                break;
-            case DT_SYMENT:
-                if (pDyn->d_un.d_val != sizeof(Elf64_Sym)) {
-                    errorCallback(DT_SYMENT);
+                    errorCallback(DT_RELAENT, pDyn->d_un.d_val);
                 }
                 break;
             case DT_STRSZ:
                 m_ArchData.strTableSize = pDyn->d_un.d_val;
+                break;
+            case DT_SYMENT:
+                if (pDyn->d_un.d_val != sizeof(Elf64_Sym)) {
+                    errorCallback(DT_SYMENT, pDyn->d_un.d_val);
+                }
                 break;
             case DT_INIT:
                 m_ArchData.dtInit = reinterpret_cast<void(*)()>(m_Base + pDyn->d_un.d_ptr);
@@ -284,12 +249,15 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std:
             case DT_SONAME:
                 m_ArchData.sharedObjectNameOffset = pDyn->d_un.d_val;
                 break;
+            case DT_REL:
+                m_Rel = reinterpret_cast<Elf64_Rel*>(m_Base + pDyn->d_un.d_ptr);
+                break;
             case DT_RELSZ:
                 m_ArchData.relSize = pDyn->d_un.d_val;
                 break;
             case DT_RELENT:
                 if (pDyn->d_un.d_val != sizeof(Elf64_Rel)) {
-                    errorCallback(DT_RELENT);
+                    errorCallback(DT_RELENT, pDyn->d_un.d_val);
                 }
                 break;
             case DT_PLTREL:
@@ -299,11 +267,11 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std:
                     m_ArchData.flags &= ~ArchData::Flags_PltRela;
                 }
                 if (pDyn->d_un.d_val != DT_RELA && pDyn->d_un.d_val != DT_REL) {
-                    errorCallback(DT_PLTREL);
+                    errorCallback(DT_PLTREL, pDyn->d_un.d_val);
                 }
                 break;
             case DT_JMPREL:
-                m_RelaPlt = reinterpret_cast<Elf64_Rela*>(m_Base + pDyn->d_un.d_ptr);
+                pPltRel = reinterpret_cast<void*>(m_Base + pDyn->d_un.d_ptr);
                 break;
             case DT_BIND_NOW:
                 m_ArchData.flags |= ArchData::Flags_BindNow;
@@ -315,7 +283,7 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std:
                 break;
             case DT_RELRENT:
                 if (pDyn->d_un.d_val != sizeof(Elf64_Relr)) {
-                    errorCallback(DT_RELRENT);
+                    errorCallback(DT_RELRENT, pDyn->d_un.d_val);
                 }
                 break;
             case DT_GNU_HASH:
@@ -332,8 +300,12 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std:
                     m_ArchData.flags |= ArchData::Flags_BindNow;
                 }
                 break;
+            case DT_AARCH64_PAC_PLT:
+                errorCallback(DT_AARCH64_PAC_PLT, pDyn->d_un.d_val);
+                break;
 
             case DT_NULL:
+            case DT_NEEDED:
             case DT_RPATH:
             case DT_SYMBOLIC:
             case DT_DEBUG:
@@ -348,25 +320,35 @@ void RoModule::Initialize(uintptr_t start, uintptr_t size, Elf64_Dyn* pDyn, std:
             case DT_SYMTAB_SHNDX:
             case DT_RELRSZ:
             case DT_RELR:
+            // case DT_AARCH64_BTI_PLT:
+            // case DT_AARCH64_VARIANT_PCS:
                 break;
         }
     }
 
+    m_RelaPlt = static_cast<Elf64_Rela*>(pPltRel);
+    if (pGnuHash == nullptr && pHash == nullptr) {
+        m_ArchData.defaultPltGot = 0;
+        return;
+    }
+    
+    auto flag = m_ArchData.flags;
     if (pGnuHash != nullptr) {
-        m_ArchData.flags |= ArchData::Flags_GnuHash;
+        flag |= ArchData::Flags_GnuHash;
         auto pHashTable = reinterpret_cast<Elf64_Word*>(m_Base + pGnuHash->d_un.d_ptr);
-        m_ArchData.hashTable = pHashTable;
         m_ArchData.bloom = reinterpret_cast<Elf64_Xword*>(pHashTable + 4);
         m_ArchData.bloomSize = pHashTable[2];
         m_ArchData.bloomShift = pHashTable[3];
+        m_ArchData.hashTable = pHashTable;
     } else if (pHash != nullptr) {
-        m_ArchData.flags &= ~ArchData::Flags_GnuHash;
+        flag &= ~ArchData::Flags_GnuHash;
         auto pHashTable = reinterpret_cast<Elf64_Word*>(m_Base + pHash->d_un.d_ptr);
         m_ArchData.nbucket = pHashTable[0];
         m_ArchData.nchain = pHashTable[1];
         m_ArchData.bucket = pHashTable + 2;
         m_ArchData.chain = m_ArchData.bucket + m_ArchData.nbucket;
     }
+    m_ArchData.flags = flag;
 
     m_ArchData.defaultPltGot = 0;
 }
