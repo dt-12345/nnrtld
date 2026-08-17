@@ -6,7 +6,7 @@ This is a WIP decompilation of the runtime link-editor (`rtld`) binary from vers
 
 This also serves as an `rtld` reimplementation that can be used for game mods and whatever else you may need it for.
 
-Currently **does not** generate a matching binary, however, it should be mostly equivalent and functional (as in you should be able to boot a game with it). Only 64-bit binaries are supported.
+Currently **does not** generate a matching binary, however, ~~it should be mostly equivalent and functional (as in you should be able to boot a game with it)~~ (edit: apparently I broke something in one of the commits, so whoops - at least one of them should work though). Only 64-bit binaries are supported.
 
 Inspired by https://github.com/marysaka/oss-rtld but this does not use any code from there.
 

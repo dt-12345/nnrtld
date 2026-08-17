@@ -50,7 +50,7 @@ struct RocrtVersion {
 
 inline bool HasStoredSdkVersion(const rocrt::RocrtInit* init) {
     const auto instr = init->entryInstruction;
-    return instr == rocrt::ARM_ENTRYPOINT_BRANCH || instr == 0 || instr == rocrt::AARCH64_ENTRYPOINT_BRANCH;
+    return instr != rocrt::ARM_ENTRYPOINT_BRANCH && instr != 0 && instr != rocrt::AARCH64_ENTRYPOINT_BRANCH;
 }
 
 } // namespace nn::rocrt
